@@ -7,10 +7,25 @@ Display Regexp [railroad diagrams](https://github.com/tabatkins/railroad-diagram
 via [hologram](https://github.com/edluffy/hologram.nvim)
 and [kitty image protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
 
+## 🚚 Installation
+
 ```lua
-use { 'bennypowers/nvim-regexp-railroad', 
+use { 'bennypowers/nvim-regexp-railroad',
+      config = function() require'nvim-regexp-railroad'.setup()  end,
       requires = {
         'nvim-lua/plenary.nvim',
         'edluffy/hologram.nvim',
+        'stevearc/dressing.nvim',
       } }
+```
+
+## 🤔 Config
+
+```lua
+-- defaults
+require'nvim-regexp-railroad'.setup {
+  mappings = {
+    RegexpRailroadShow = 'gR',
+  },
+}
 ```
