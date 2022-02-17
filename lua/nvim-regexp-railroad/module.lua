@@ -3,23 +3,24 @@ local ts_utils = require'nvim-treesitter.ts_utils'
 local M = {}
 
 local function get_regexp_pattern_at_cursor()
-  local node = ts_utils.get_node_at_cursor()
-  local regex = node
+  local cursor_node = ts_utils.get_node_at_cursor()
+  local node = cursor_node
 
-  while regex:type() ~= 'pattern' do
-    local _regex = regex
-    regex = ts_utils.get_previous_node(regex, true, true)
-    if not regex then
-      regex = ts_utils.get_root_for_node(_regex)
-      if not regex or regex == node then
-        return
-      end
-    end
+  while node:type() ~= 'pattern' and node:type() ~= 'chunk' do
+    local _node = node
+    node = ts_utils.get_previous_node(node, true, true) or ts_utils.get_root_for_node(_node)
   end
 
-  local text = ts_utils.get_node_text(regex)[1]
+  if ( not node
+    or node == cursor_node
+    or node:type() == 'chunk'
+  ) then
+    return
+  end
 
-  return text, regex
+  local text = ts_utils.get_node_text(node)[1]
+
+  return text, node
 end
 
 local function is_container(node)
