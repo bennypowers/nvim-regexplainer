@@ -3,24 +3,40 @@ local module = require'nvim-regexp-railroad.module'
 
 local M = {}
 
+local config_command_map = {
+  show = 'RegexpRailroadShow',
+}
+
 local default_config = {
+  -- 'narrative'
+  mode = 'narrative', -- TODO: 'ascii', 'graphical'
+
+  -- 'split', 'popup'
+  display = 'popup',
+
   mappings = {
-    RegexpRailroadShow = 'gR',
+    show = 'gR',
+  },
+
+  narrative = {
+    separator = '\n ',
   },
 }
 
--- setup is the public method to setup your plugin
-M.setup = function(config)
-  config = vim.tbl_deep_extend('keep', config or {}, default_config)
+local local_config = default_config
 
-  for cmd, binding in pairs(config.mappings) do
-    utils.map('n', binding, ':' .. cmd .. '<CR>')
+-- merge in the user config and setup key bindings
+M.setup = function(config)
+  local_config = vim.tbl_deep_extend('keep', config or {}, default_config)
+  for cmd, binding in pairs(local_config.mappings) do
+    local command = ':' .. config_command_map[cmd] .. '<CR>'
+    utils.map('n', binding, command)
   end
 end
 
 -- "show" is a public method for the plugin
 M.show = function()
-  module.show_below()
+  module.show(local_config)
 end
 
 return M
