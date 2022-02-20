@@ -1,6 +1,6 @@
 local M = {}
 
-M.map = function(mode, lhs, rhs, opts)
+function M.map(mode, lhs, rhs, opts)
   local options = {
     noremap = true,
     silent = true
@@ -12,6 +12,10 @@ M.map = function(mode, lhs, rhs, opts)
   if not stat then
     vim.notify(error, vim.log.levels.ERROR)
   end
+end
+
+function M.notify(value)
+  return vim.notify(vim.inspect(value))
 end
 
 return M

@@ -1,6 +1,7 @@
 local M = {}
 
-local node_types = {
+local component_types = {
+  'alternation',
   'boundary_assertion',
   'character_class',
   'character_class_escape',
@@ -11,7 +12,7 @@ local node_types = {
   'term',
 }
 
-for _, type in ipairs(node_types) do
+for _, type in ipairs(component_types) do
   M['is_'..type] = function (component)
     return component.type == type
   end
@@ -25,13 +26,45 @@ function M.is_control_escape(component)
   )
 end
 
+function M.is_only_chars(component)
+  if component.children then
+    for _, child in ipairs(component.children) do
+      if child.type ~= 'pattern_character' then
+        return false
+      end
+    end
+  end
+  return true
+end
+
 function M.is_capture_group(component)
+  if not component.type then
+    vim.notify(vim.inspect(component))
+  end
   local found = component.type:find('capturing_group$')
   return found ~= nil
 end
 
+function M.is_simple_pattern_character(component)
+  if not component or component.type ~= 'pattern_character' then
+    return false
+  else
+    for key in pairs(component) do
+      print(key)
+      if (not (key == 'text' or key == 'type')) then
+        return false
+      end
+    end
+  end
+  return true
+end
+
 function M.is_named_capturing_group(node)
   return node:type() == 'named_capturing_group'
+end
+
+function M.is_non_capturing_group(node)
+  return node:type() == 'non_capturing_group'
 end
 
 function M.is_group_name(node)
@@ -51,8 +84,10 @@ function M. is_container(node)
     local type = node:type()
     return (
       type == 'anonymous_capturing_group' or
+      type == 'alternation'               or
       type == 'character_class'           or
       type == 'named_capturing_group'     or
+      type == 'non_capturing_group'       or
       type == 'pattern'                   or
       type == 'term'                      or
       false
@@ -71,6 +106,7 @@ function M. is_punctuation(type)
     type == ']'   or
     type == '(?<' or
     type == '>'   or
+    type == '|'   or
     false
   )
 end

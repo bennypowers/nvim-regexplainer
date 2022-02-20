@@ -1,4 +1,4 @@
-local utils  = require'nvim-regexp-railroad.utils'
+local utils  = require'nvim-regexp-railroad.util.utils'
 local module = require'nvim-regexp-railroad.module'
 
 local M = {}
@@ -19,7 +19,7 @@ local default_config = {
   },
 
   narrative = {
-    separator = '\n ',
+    separator = '\n',
   },
 }
 
