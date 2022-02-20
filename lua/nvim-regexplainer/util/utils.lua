@@ -14,8 +14,8 @@ function M.map(mode, lhs, rhs, opts)
   end
 end
 
-function M.notify(value)
-  return vim.notify(vim.inspect(value))
+function M.notify(value, level)
+  return vim.notify(vim.inspect(value), level)
 end
 
 return M

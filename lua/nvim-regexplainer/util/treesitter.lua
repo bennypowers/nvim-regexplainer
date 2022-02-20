@@ -5,70 +5,20 @@ local component_types = {
   'boundary_assertion',
   'character_class',
   'character_class_escape',
+  'named_capturing_group',
+  'non_capturing_group',
   'class_range',
   'identity_escape',
+  'group_name',
   'pattern',
   'pattern_character',
   'term',
 }
 
 for _, type in ipairs(component_types) do
-  M['is_'..type] = function (component)
-    return component.type == type
+  M['is_'..type] = function (node)
+    return node:type() == type
   end
-end
-
-function M.is_control_escape(component)
-  return component.type == 'control_escape' or (
-    component.type == 'character_class_escape' and (
-      component.text:gmatch('[ds]') ~= nil
-    )
-  )
-end
-
-function M.is_only_chars(component)
-  if component.children then
-    for _, child in ipairs(component.children) do
-      if child.type ~= 'pattern_character' then
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function M.is_capture_group(component)
-  if not component.type then
-    vim.notify(vim.inspect(component))
-  end
-  local found = component.type:find('capturing_group$')
-  return found ~= nil
-end
-
-function M.is_simple_pattern_character(component)
-  if not component or component.type ~= 'pattern_character' then
-    return false
-  else
-    for key in pairs(component) do
-      print(key)
-      if (not (key == 'text' or key == 'type')) then
-        return false
-      end
-    end
-  end
-  return true
-end
-
-function M.is_named_capturing_group(node)
-  return node:type() == 'named_capturing_group'
-end
-
-function M.is_non_capturing_group(node)
-  return node:type() == 'non_capturing_group'
-end
-
-function M.is_group_name(node)
-  return node:type() == 'group_name'
 end
 
 -- Containers are regexp treesitter nodes which may contain leaf nodes like pattern_character.

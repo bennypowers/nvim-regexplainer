@@ -1,6 +1,8 @@
-local descriptions = require'nvim-regexp-railroad.util.descriptions'
-local util = require'nvim-regexp-railroad.util.treesitter'
+local descriptions           = require'nvim-regexplainer.util.descriptions'
+local component_pred         = require'nvim-regexplainer.util.component'
 
+-- A textual, narrative renderer which describes a regexp in terse prose
+--
 local M = {}
 
 local function escape_markdown(str)
@@ -46,7 +48,7 @@ local function get_narrative_clause(component, options, first, last)
     prefix = options.is_alternation and '' or ''
   end
 
-  if util.is_alternation(component) then
+  if component_pred.is_alternation(component) then
     for i, child in ipairs(component.children) do
       local oxford = i == #component.children and 'or ' or ''
       local first_in_alt = i == 1
@@ -62,43 +64,47 @@ local function get_narrative_clause(component, options, first, last)
     end
   end
 
-  if util.is_term(component) and util.is_only_chars(component) then
+  if component_pred.is_term(component) and component_pred.is_only_chars(component) then
     infix = '`' .. component.text .. '`'
   else
-    while (util.is_pattern(component) or util.is_term(component)) do
+    while (component_pred.is_pattern(component) or component_pred.is_term(component)) do
       component = component.children[1]
     end
   end
 
-  if util.is_pattern_character(component) then
+  if component_pred.is_pattern_character(component) then
     infix = '`' .. escape_markdown(component.text) .. '`'
   end
 
-  if util.is_identity_escape(component) then
+  if component_pred.is_identity_escape(component) then
     infix = '`' .. component.text:gsub('\\', '', 1) .. '`'
   end
 
-  if util.is_control_escape(component) then
+  if component_pred.is_control_escape(component) then
     local char = component.text:gsub('\\', '', 1)
     local desc = descriptions.describe_control_escape(char) or char
     infix = '**' .. desc .. '**'
   end
 
-  if util.is_boundary_assertion(component) then
+  if component_pred.is_boundary_assertion(component) then
     infix = '**WB**'
   end
 
-  if util.is_character_class(component) then
+  if component_pred.is_character_class(component) then
     infix = escape_markdown(descriptions.describe_character_class(component))
   end
 
-  if util.is_capture_group(component) then
+  if component_pred.is_capture_group(component) then
     local depth = (options.depth or 0) + 1
     local sep = '\n' for _ = 0, depth do sep = sep .. ' ' end
 
+    if type(options.separator) == "function" then
+      sep = options.separator(component)
+    end
+
     local children = component.children
-    while (#children == 1 and (util.is_term(children[1])
-                               or util.is_pattern(children[1]))) do
+    while (#children == 1 and (component_pred.is_term(children[1])
+                               or component_pred.is_pattern(children[1]))) do
       children = children[1].children
     end
 
@@ -140,7 +146,12 @@ function M.get_narrative_lines(components, options)
                                                last))
   end
 
-  local narrative = table.concat(clauses, options.separator)
+  local separator = options.separator
+  if type(separator) == "function" then
+    separator = separator({ type = 'root', depth = 0 })
+  end
+
+  local narrative = table.concat(clauses, separator)
 
   for line in narrative:gmatch("([^\n]*)\n?") do
     if #line > 0 then

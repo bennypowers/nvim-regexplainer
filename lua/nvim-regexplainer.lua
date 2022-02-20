@@ -1,10 +1,14 @@
-local utils  = require'nvim-regexp-railroad.util.utils'
-local module = require'nvim-regexp-railroad.module'
+local utils  = require'nvim-regexplainer.util.utils'
+local module = require'nvim-regexplainer.module'
 
 local M = {}
 
 local config_command_map = {
-  show = 'RegexpRailroadShow',
+  show = 'RegexplainerShow',
+}
+
+local config_command_description_map = {
+  show = 'Explain the regexp under the cursor',
 }
 
 local default_config = {
@@ -28,9 +32,18 @@ local local_config = default_config
 -- merge in the user config and setup key bindings
 M.setup = function(config)
   local_config = vim.tbl_deep_extend('keep', config or {}, default_config)
+  local has_which_key, wk = pcall(require, 'which-key')
   for cmd, binding in pairs(local_config.mappings) do
     local command = ':' .. config_command_map[cmd] .. '<CR>'
-    utils.map('n', binding, command)
+
+    if has_which_key then
+      local description = config_command_description_map[cmd]
+      wk.register({
+        [binding] = { command, description }, -- create a binding with label
+      }, { mode = 'n' })
+    else
+      utils.map('n', binding, command)
+    end
   end
 end
 
