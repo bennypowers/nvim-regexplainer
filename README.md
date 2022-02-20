@@ -94,4 +94,7 @@ capture group 1:
 - [ ] Display Regexp [railroad diagrams](https://github.com/tabatkins/railroad-diagrams/)
   via [hologram](https://github.com/edluffy/hologram.nvim)
   and [kitty image protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
+- [ ] online documentation
+- [ ] some unit tests or something, i guess
+
 
