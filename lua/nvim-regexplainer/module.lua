@@ -81,8 +81,12 @@ function M.show(options)
     end
 
     -- this is the `bufnr` where it cursor is currently at (where you're editing your file)
-    local parent_bufnr = vim.api.nvim_get_current_buf()
-    local buffer = buffers.get_buffer(options, parent_bufnr)
+    local buffer = buffers.get_buffer(options, {
+      parent = {
+        winnr = vim.api.nvim_get_current_win(),
+        bufnr = vim.api.nvim_get_current_buf(),
+      }
+    })
 
     local components = component.make_components(node, nil, node)
 
@@ -93,13 +97,15 @@ function M.show(options)
       return
     end
 
-    buffer:mount()
+    if not buffer.mounted then
+      buffer:mount()
+    end
 
     local renderer_options = options[options.mode] or {}
 
     renderer.set_lines(buffer, components, renderer_options)
 
-    buffers.finalize(buffer, parent_bufnr)
+    buffers.finalize(buffer)
   end
 end
 

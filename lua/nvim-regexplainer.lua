@@ -48,8 +48,8 @@ M.setup = function(config)
 end
 
 -- "show" is a public method for the plugin
-M.show = function()
-  module.show(local_config)
+M.show = function(config)
+  module.show(vim.tbl_deep_extend('keep', config or {}, local_config))
 end
 
 return M
