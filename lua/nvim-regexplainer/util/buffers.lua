@@ -17,6 +17,7 @@ local shared_options = {
 }
 
 local last_split
+local last_popup
 
 local function get_class_name(object)
   local passed, class_name = pcall(function()
@@ -54,6 +55,7 @@ function M.get_buffer(options, parent)
     }))
     last_split = buffer
   elseif options.display == 'popup' then
+    if last_popup then return last_popup end
     buffer = require'nui.popup'(vim.tbl_deep_extend('keep', shared_options, {
       position = 1,
       relative = 'cursor',
@@ -63,6 +65,7 @@ function M.get_buffer(options, parent)
         style = 'shadow',
       },
     }))
+    last_popup = buffer
   end
 
   setmetatable(buffer, vim.tbl_deep_extend('keep', getmetatable(buffer), parent))
@@ -109,7 +112,8 @@ function M.render(buffer, renderer, renderer_options, components)
     buffer:set_size { width = width, height = height }
 
     autocmd.buf.define(parent.bufnr, event.CursorMoved, function()
-      buffer:unmount()
+      -- buffer:unmount()
+      buffer:hide()
     end, { once = true })
 
   end
@@ -123,7 +127,7 @@ function M.render(buffer, renderer, renderer_options, components)
     buffer:on({ event.BufLeave, event.BufWinLeave }, function ()
       vim.schedule(function()
         buffer:hide()
-        buffer:unmount()
+        -- buffer:unmount()
       end)
     end, { once = true })
   end)
