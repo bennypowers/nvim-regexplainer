@@ -1,5 +1,6 @@
 local ts_utils            = require'nvim-treesitter.ts_utils'
 local component           = require'nvim-regexplainer.util.component'
+local tree                = require'nvim-regexplainer.util.treesitter'
 local utils               = require'nvim-regexplainer.util.utils'
 local buffers             = require'nvim-regexplainer.util.buffers'
 
@@ -10,7 +11,7 @@ local M = {}
 --
 local function get_regexp_pattern_at_cursor()
   local cursor_node = ts_utils.get_node_at_cursor()
-  if cursor_node:type() == 'program' then return end
+  if not cursor_node or cursor_node:type() == 'program' then return end
 
   local node = cursor_node
 
@@ -41,7 +42,7 @@ local function get_regexp_pattern_at_cursor()
     end
   end
 
-  while node:type() ~= 'pattern' do
+  while not tree.is_upwards_stop(node) do
     local _node = node
     node = ts_utils.get_previous_node(node, true, true)
     if not node then
@@ -49,11 +50,7 @@ local function get_regexp_pattern_at_cursor()
     end
   end
 
-  if ( not node
-    or node == cursor_node
-    or node:type() == 'chunk'
-    or node:type() == 'program'
-  ) then
+  if node == cursor_node or tree.is_document(node) then
     return
   end
 
@@ -80,7 +77,10 @@ function M.show(options)
       renderer = require'nvim-regexplainer.renderers.narrative'
     end
 
-    -- this is the `bufnr` where it cursor is currently at (where you're editing your file)
+    local components = component.make_components(node, nil, node)
+
+    local text = ts_utils.get_node_text(node)[1]
+
     local buffer = buffers.get_buffer(options, {
       parent = {
         winnr = vim.api.nvim_get_current_win(),
@@ -88,25 +88,28 @@ function M.show(options)
       }
     })
 
-    local components = component.make_components(node, nil, node)
-
-    local text = ts_utils.get_node_text(node)[1]
-
     if not buffer then
       utils.notify('' .. text .. '\n\nCOMPONENTS:\n' .. vim.inspect(components))
       return
     end
 
-    if not buffer.mounted then
-      buffer:mount()
-    end
-
     local renderer_options = options[options.mode] or {}
 
-    renderer.set_lines(buffer, components, renderer_options)
-
-    buffers.finalize(buffer)
+    buffers.render(buffer, renderer, renderer_options, components)
+  else
+    M.hide(options)
   end
+end
+
+function M.hide(options)
+  if not options.display == 'split' then return end
+  local buffer = buffers.get_buffer(options, {
+    parent = {
+      winnr = vim.api.nvim_get_current_win(),
+      bufnr = vim.api.nvim_get_current_buf(),
+    }
+  })
+  buffer:hide()
 end
 
 return M

@@ -57,10 +57,7 @@ function M.get_buffer(options, parent)
     buffer = require'nui.popup'(vim.tbl_deep_extend('keep', shared_options, {
       position = 1,
       relative = 'cursor',
-      size = {
-        width = '75%',
-        height = 5,
-      },
+      size = 1,
       border = {
         padding = { 1, 2 },
         style = 'shadow',
@@ -73,26 +70,51 @@ function M.get_buffer(options, parent)
   return buffer
 end
 
-function M.finalize(buffer)
-  local count = vim.api.nvim_buf_line_count(buffer.bufnr)
+function M.render(buffer, renderer, renderer_options, components)
   local parent = getmetatable(buffer).parent
+
+  if not buffer.mounted then
+    buffer:mount()
+  end
+
+  if is_popup(buffer) then
+    buffer:hide()
+  end
+
+  local lines = renderer.get_lines(components, renderer_options)
+
+  local height = #lines
+  local width = 0
+
+  for _, line in ipairs(lines) do
+    if #line > width then
+      width = #line
+    end
+  end
 
   if is_split(buffer) then
     buffer:on(event.BufUnload, function()
       last_split = nil
     end)
-    vim.api.nvim_win_set_height(buffer.winid, count)
+    vim.api.nvim_win_set_height(buffer.winid, height)
   end
 
   if is_popup(buffer) then
-    buffer:set_size {
-      width = '75%',
-      height = count,
-    }
+    local win_width = vim.api.nvim_win_get_width(buffer.winid)
+
+    if (win_width * .75) < width then
+      width = '75%'
+    end
+
+    buffer:set_size { width = width, height = height }
+
     autocmd.buf.define(parent.bufnr, event.CursorMoved, function()
       buffer:unmount()
     end, { once = true })
+
   end
+
+  renderer.set_lines(buffer, lines)
 
   vim.api.nvim_set_current_win(parent.winnr)
   vim.api.nvim_set_current_buf(parent.bufnr)
@@ -105,6 +127,8 @@ function M.finalize(buffer)
       end)
     end, { once = true })
   end)
+
+  buffer:show()
 end
 
 return M

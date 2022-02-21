@@ -15,6 +15,9 @@ local default_config = {
   -- 'narrative'
   mode = 'narrative', -- TODO: 'ascii', 'graphical'
 
+  -- automatically show when the cursor enters a regexp
+  auto = false,
+
   -- 'split', 'popup'
   display = 'popup',
 
@@ -38,12 +41,20 @@ M.setup = function(config)
 
     if has_which_key then
       local description = config_command_description_map[cmd]
-      wk.register({
-        [binding] = { command, description }, -- create a binding with label
-      }, { mode = 'n' })
+      wk.register({ [binding] = { command, description } }, { mode = 'n' })
     else
       utils.map('n', binding, command)
     end
+  end
+  if local_config.auto then
+    vim.cmd [[
+      augroup Regexplainer
+        function RegexplainerDelayed(timerid)
+          :RegexplainerShow
+        endfunction
+        autocmd CursorMoved *.html,*.js,*.ts call timer_start(10, 'RegexplainerDelayed')
+      augroup END
+    ]]
   end
 end
 

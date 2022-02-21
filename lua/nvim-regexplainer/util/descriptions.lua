@@ -70,5 +70,14 @@ function M.describe_control_escape(char)
   end
 end
 
+function M.describe_character(component)
+  local type = component.type
+  if     type == 'start_assertion' then return 'START'
+  elseif type == 'end_assertion'   then return 'END'
+  elseif type == 'any_character'   then return 'ANY'
+  else                                  return component.text
+  end
+end
+
 return M
 

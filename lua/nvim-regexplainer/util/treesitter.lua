@@ -1,21 +1,27 @@
+local ts_utils            = require'nvim-treesitter.ts_utils'
+
 local M = {}
 
-local component_types = {
+local node_types = {
   'alternation',
   'boundary_assertion',
   'character_class',
   'character_class_escape',
+  'chunk',
+  'class_range',
+  'document',
+  'group_name',
+  'identity_escape',
   'named_capturing_group',
   'non_capturing_group',
-  'class_range',
-  'identity_escape',
-  'group_name',
   'pattern',
   'pattern_character',
+  'program',
+  'source',
   'term',
 }
 
-for _, type in ipairs(component_types) do
+for _, type in ipairs(node_types) do
   M['is_'..type] = function (node)
     return node:type() == type
   end
@@ -48,17 +54,42 @@ end
 -- For reasons the author has yet to understand, punctuation like the opening of
 -- a named_capturing_group gets registered as components when traversing the tree. Let's exclude them.
 --
-function M. is_punctuation(type)
+function M.is_punctuation(type)
   return (
     type == '('   or
     type == ')'   or
     type == '['   or
     type == ']'   or
     type == '(?<' or
+    type == '(?:' or
     type == '>'   or
     type == '|'   or
     false
   )
 end
 
+function M.is_control_escape(node)
+  return require'nvim-regexplainer.util.component'.is_control_escape {
+    type = node:type(),
+    text = ts_utils.get_node_text(node)[1],
+  }
+end
+
+-- Is this the document root (or close enough for our purposes)?
+--
+function M.is_document(node)
+  return node
+     and node:type() == 'chunk'
+      or node:type() == 'program'
+      or node:type() == 'document'
+      or node:type() == 'source'
+end
+
+-- Should we stop here when traversing upwards through the tree from the cursor node?
+--
+function M.is_upwards_stop(node)
+  return node:type() == 'pattern' or M.is_document(node)
+end
+
 return M
+

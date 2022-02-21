@@ -43,9 +43,9 @@ local function get_narrative_clause(component, options, first, last)
   local suffix = ''
 
   if first and not last then
-    prefix = options.is_alternation and '' or ''
+    prefix = ''
   elseif not options.depth and last and not first then
-    prefix = options.is_alternation and '' or ''
+    prefix = ''
   end
 
   if component_pred.is_alternation(component) then
@@ -58,7 +58,7 @@ local function get_narrative_clause(component, options, first, last)
               .. (first_in_alt and '' or #component.children == 2 and ' ' or ', ')
               .. oxford
               .. get_narrative_clause(child,
-                                      vim.tbl_extend('keep', options, { is_alternation = true }),
+                                      options,
                                       first_in_alt,
                                       last_in_alt)
     end
@@ -78,9 +78,9 @@ local function get_narrative_clause(component, options, first, last)
 
   if component_pred.is_identity_escape(component) then
     infix = '`' .. component.text:gsub('\\', '', 1) .. '`'
-  end
-
-  if component_pred.is_control_escape(component) then
+  elseif component_pred.is_special_character(component) then
+    infix = '**' .. escape_markdown(descriptions.describe_character(component)) .. '**'
+  elseif component_pred.is_control_escape(component) then
     local char = component.text:gsub('\\', '', 1)
     local desc = descriptions.describe_control_escape(char) or char
     infix = '**' .. desc .. '**'
@@ -108,7 +108,7 @@ local function get_narrative_clause(component, options, first, last)
       children = children[1].children
     end
 
-    local sublines = M.get_narrative_lines(children,
+    local sublines = M.get_lines(children,
                                            vim.tbl_extend('keep', options, {
                                              depth = depth,
                                            }))
@@ -126,6 +126,7 @@ local function get_narrative_clause(component, options, first, last)
       .. sep
       .. contents
       .. '\n'
+
   else
     suffix = get_suffix(component)
   end
@@ -133,13 +134,23 @@ local function get_narrative_clause(component, options, first, last)
   return prefix .. infix .. suffix
 end
 
-function M.get_narrative_lines(components, options)
+function M.get_lines(components, options)
   local clauses = {}
   local lines   = {}
 
   for i, component in ipairs(components) do
     local first = i == 1
     local last = i == #components
+    if component.type == 'ERROR' then
+      lines[1] = '🚨 **Regexp contains an ERROR** at'
+      lines[2] = components[i + 1].text
+      lines[3] = ''
+      for _ = 1, component.error.position[1][2] - component.error.start_offset do
+        lines[3] = lines[3] .. ' '
+      end
+      lines[3] = lines[3] .. '👆'
+      return lines
+    end
     table.insert(clauses, get_narrative_clause(component,
                                                options,
                                                first,
@@ -162,9 +173,8 @@ function M.get_narrative_lines(components, options)
   return lines
 end
 
-function M.set_lines(buf, components, options)
-  local lines = M.get_narrative_lines(components, options)
-  vim.api.nvim_buf_call(buf.bufnr, function()
+function M.set_lines(buf, lines)
+  vim.api.nvim_win_call(buf.winid, function()
     vim.lsp.util.stylize_markdown(buf.bufnr, lines)
   end)
   return lines
