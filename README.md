@@ -5,6 +5,8 @@
 
 Describe the regular expression under the cursor.
 
+Heavily inspired by the venerable [atom-regexp-railroad](https://github.com/klorenz/atom-regex-railroad-diagrams/).
+
 ## 🚚 Installation
 
 ```lua
