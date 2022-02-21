@@ -15,7 +15,7 @@ local default_config = {
   -- 'narrative'
   mode = 'narrative', -- TODO: 'ascii', 'graphical'
 
-  -- automatically show when the cursor enters a regexp
+  -- automatically show the explainer when the cursor enters a regexp
   auto = false,
 
   -- 'split', 'popup'
@@ -49,10 +49,10 @@ M.setup = function(config)
   if local_config.auto then
     vim.cmd [[
       augroup Regexplainer
-        function RegexplainerDelayed(timerid)
+        function RegexplainerDelayed(...)
           :RegexplainerShow
         endfunction
-        autocmd CursorMoved *.html,*.js,*.ts call timer_start(10, 'RegexplainerDelayed')
+        autocmd CursorMoved *.html,*.js,*.ts call timer_start(1, 'RegexplainerDelayed')
       augroup END
     ]]
   end

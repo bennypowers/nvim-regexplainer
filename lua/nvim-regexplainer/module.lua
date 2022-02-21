@@ -59,7 +59,7 @@ end
 
 -- Show the explainer for the regexp under the cursor
 --
-function M.show(options)
+local function show(options)
   local node = get_regexp_pattern_at_cursor()
   if node then
 
@@ -111,6 +111,8 @@ function M.hide(options)
   })
   buffer:hide()
 end
+
+M.show = require'nvim-regexplainer.util.defer'.debounce_trailing(show, 50, true)
 
 return M
 
