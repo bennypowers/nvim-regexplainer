@@ -26,6 +26,9 @@ require'nvim-regexplainer'.setup {
   -- 'narrative'
   mode = 'narrative', -- TODO: 'ascii', 'graphical'
 
+  -- automatically show the explainer when the cursor enters a regexp
+  auto = false,
+
   -- 'split', 'popup'
   display = 'popup',
 
@@ -49,7 +52,7 @@ When the cursor moves, the popup closes.
 You can call `show` with your own display type to override your config
 
 ```lua
-require'nvim-regexplainer'.show{ display = 'split' }
+require'nvim-regexplainer'.show { display = 'split' }
 ```
 
 Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`
