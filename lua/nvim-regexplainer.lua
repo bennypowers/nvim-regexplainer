@@ -35,6 +35,8 @@ local local_config = default_config
 -- merge in the user config and setup key bindings
 M.setup = function(config)
   local_config = vim.tbl_deep_extend('keep', config or {}, default_config)
+
+  -- bind keys from config
   local has_which_key, wk = pcall(require, 'which-key')
   for cmd, binding in pairs(local_config.mappings) do
     local command = ':' .. config_command_map[cmd] .. '<CR>'
@@ -46,10 +48,12 @@ M.setup = function(config)
       utils.map('n', binding, command)
     end
   end
+
+  -- setup auto commend if configured
   if local_config.auto then
     vim.cmd [[
       augroup Regexplainer
-        function RegexplainerDelayed(...)
+        function! RegexplainerDelayed(...)
           :RegexplainerShow
         endfunction
         autocmd CursorMoved *.html,*.js,*.ts call timer_start(1, 'RegexplainerDelayed')
@@ -58,7 +62,6 @@ M.setup = function(config)
   end
 end
 
--- "show" is a public method for the plugin
 M.show = function(config)
   module.show(vim.tbl_deep_extend('keep', config or {}, local_config))
 end

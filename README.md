@@ -1,9 +1,11 @@
 # nvim-regexplainer
 
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/ellisonleao/nvim-plugin-template/default?style=for-the-badge)
 ![Lua](https://img.shields.io/badge/Made%20with%20Lua-blueviolet.svg?style=for-the-badge&logo=lua)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bennypowers/nvim-regexplainer/main?style=for-the-badge)
 
 Describe the regular expression under the cursor.
+
+[![Screencast](https://user-images.githubusercontent.com/1466420/155042761-1fe8b8df-78d8-4173-a711-7a57634fbde6.mov)]
 
 Heavily inspired by the venerable [atom-regexp-railroad](https://github.com/klorenz/atom-regex-railroad-diagrams/).
 

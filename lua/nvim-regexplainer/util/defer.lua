@@ -1,4 +1,7 @@
- local M = {}
+-- @license MIT hey@runiq.de
+--
+
+local M = {}
 
 ---Validates args for `throttle()` and  `debounce()`.
 local function td_validate(fn, ms)
