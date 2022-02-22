@@ -1,5 +1,5 @@
-local utils  = require'nvim-regexplainer.util.utils'
-local module = require'nvim-regexplainer.module'
+local utils  = require'regexplainer.util.utils'
+local module = require'regexplainer.module'
 
 local M = {}
 

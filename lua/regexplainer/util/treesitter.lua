@@ -76,7 +76,7 @@ function M.is_punctuation(type)
 end
 
 function M.is_control_escape(node)
-  return require'nvim-regexplainer.util.component'.is_control_escape {
+  return require'regexplainer.util.component'.is_control_escape {
     type = node:type(),
     text = ts_utils.get_node_text(node)[1],
   }
@@ -100,7 +100,7 @@ end
 
 -- Is it a lookahead or lookbehind assertion?
 function M.is_look_assertion(node)
-  return require'nvim-regexplainer.util.component'.is_look_assertion { type = node:type() }
+  return require'regexplainer.util.component'.is_look_assertion { type = node:type() }
 end
 
 return M

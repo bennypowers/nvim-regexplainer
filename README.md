@@ -13,7 +13,7 @@ Heavily inspired by the venerable [atom-regexp-railroad](https://github.com/klor
 
 ```lua
 use { 'bennypowers/nvim-regexplainer',
-      config = function() require'nvim-regexplainer'.setup()  end,
+      config = function() require'regexplainer'.setup()  end,
       requires = {
         'nvim-lua/plenary.nvim',
         'MunifTanjim/nui.nvim',
@@ -24,7 +24,7 @@ use { 'bennypowers/nvim-regexplainer',
 
 ```lua
 -- defaults
-require'nvim-regexplainer'.setup {
+require'regexplainer'.setup {
   -- 'narrative'
   mode = 'narrative', -- TODO: 'ascii', 'graphical'
 
@@ -54,7 +54,7 @@ When the cursor moves, the popup closes.
 You can call `show` with your own display type to override your config
 
 ```lua
-require'nvim-regexplainer'.show { display = 'split' }
+require'regexplainer'.show { display = 'split' }
 ```
 
 Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`

@@ -1,4 +1,4 @@
-local utils   = require'nvim-regexplainer.util.utils'
+local utils   = require'regexplainer.util.utils'
 local autocmd = require'nui.utils.autocmd'
 local event   = autocmd.event
 

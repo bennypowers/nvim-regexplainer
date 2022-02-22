@@ -1,6 +1,6 @@
-local descriptions           = require'nvim-regexplainer.util.descriptions'
-local component_pred         = require'nvim-regexplainer.util.component'
-local utils                  = require'nvim-regexplainer.util.utils'
+local descriptions           = require'regexplainer.util.descriptions'
+local component_pred         = require'regexplainer.util.component'
+local utils                  = require'regexplainer.util.utils'
 
 -- A textual, narrative renderer which describes a regexp in terse prose
 --

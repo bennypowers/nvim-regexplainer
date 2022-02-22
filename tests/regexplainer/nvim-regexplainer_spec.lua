@@ -1,7 +1,7 @@
--- local regexplainer = require'nvim-regexplainer'
+-- local regexplainer = require'regexplainer'
 
 describe("narrative renderer", function()
-  -- local narrative = require'nvim-regexplainer.renderers.narrative'
+  -- local narrative = require'regexplainer.renderers.narrative'
 
   -- it("works with default", function()
   --   assert("my first function with param = Hello!", regexplainer.hello())

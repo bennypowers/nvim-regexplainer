@@ -1,5 +1,5 @@
 local ts_utils    = require'nvim-treesitter.ts_utils'
-local utils       = require'nvim-regexplainer.util.utils'
+local utils       = require'regexplainer.util.utils'
 
 local M = {}
 
@@ -35,7 +35,7 @@ function M.describe_character_class(component)
     local initial_sep = i == 1 and '' or ', '
     local text = utils.escape_markdown(child.text)
 
-    if require'nvim-regexplainer.util.component'.is_control_escape(child) then
+    if require'regexplainer.util.component'.is_control_escape(child) then
       text = '**' .. M.describe_control_escape(text:sub(2)) .. '**'
     end
 

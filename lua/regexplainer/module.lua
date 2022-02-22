@@ -1,8 +1,8 @@
 local ts_utils            = require'nvim-treesitter.ts_utils'
-local component           = require'nvim-regexplainer.util.component'
-local tree                = require'nvim-regexplainer.util.treesitter'
-local utils               = require'nvim-regexplainer.util.utils'
-local buffers             = require'nvim-regexplainer.util.buffers'
+local component           = require'regexplainer.util.component'
+local tree                = require'regexplainer.util.treesitter'
+local utils               = require'regexplainer.util.utils'
+local buffers             = require'regexplainer.util.buffers'
 
 local M = {}
 
@@ -68,13 +68,13 @@ local function show(options)
       node = node:child(0)
     end
 
-    local can_render, renderer = pcall(require, 'nvim-regexplainer.renderers.'.. options.mode)
+    local can_render, renderer = pcall(require, 'regexplainer.renderers.'.. options.mode)
 
     if not can_render then
       utils.notify(options.mode .. ' is not a valid renderer', 'warning')
       utils.notify(renderer, 'error')
 
-      renderer = require'nvim-regexplainer.renderers.narrative'
+      renderer = require'regexplainer.renderers.narrative'
     end
 
     local components = component.make_components(node, nil, node)
@@ -112,7 +112,7 @@ function M.hide(options)
   buffer:hide()
 end
 
-M.show = require'nvim-regexplainer.util.defer'.debounce_trailing(show, 50, true)
+M.show = require'regexplainer.util.defer'.debounce_trailing(show, 50, true)
 
 return M
 

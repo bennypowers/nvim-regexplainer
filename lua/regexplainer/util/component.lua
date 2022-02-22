@@ -1,6 +1,6 @@
 local ts_utils            = require'nvim-treesitter.ts_utils'
-local descriptions        = require'nvim-regexplainer.util.descriptions'
-local node_pred           = require'nvim-regexplainer.util.treesitter'
+local descriptions        = require'regexplainer.util.descriptions'
+local node_pred           = require'regexplainer.util.treesitter'
 
 local M = {}
 
