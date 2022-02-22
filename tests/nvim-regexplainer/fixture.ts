@@ -37,12 +37,19 @@
 /(one|two|three)/;
 /zero|bupkis|gornisht|(one|two|three|(four|five))/;
 
-/** lookaheads and lookbehinds */
+/** lookahead */
 /@(?=u)@/;
 /@(?!u)@/;
 /@(?=up|down){2,3}@/;
 /@(?![\w\s])@/;
 /@(?=g(?:raph)?ql)@/;
+
+/** lookbehind */
+/@(?<=u)@/;
+/@(?<!u)@/;
+/@(?<=up|down){2,3}@/;
+/@(?<![\w\s])@/;
+/@(?<=g(?:raph)?ql)@/;
 
 /** practical examples */
 /^@scope\/(.*)\.js";?$/;

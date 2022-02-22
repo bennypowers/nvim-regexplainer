@@ -103,9 +103,10 @@ local function get_narrative_clause(component, options, first, last)
     infix = '**' .. desc .. '**'
   end
 
-  if component_pred.is_lookahead_assertion(component) then
+  if component_pred.is_look_assertion(component) then
     local negation = component.negative and 'NOT ' or ''
-    prefix = '**' .. negation .. 'followed by' .. '**'
+    local direction = component_pred.is_lookahead_assertion(component) and 'followed' or 'preceeded'
+    prefix = '**' .. negation .. direction .. ' by' .. '**'
 
     local sublines, sep = get_sublines(component, options)
     local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
