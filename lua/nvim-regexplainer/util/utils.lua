@@ -18,4 +18,8 @@ function M.notify(value, level)
   return vim.notify(vim.inspect(value), level)
 end
 
+function M.escape_markdown(str)
+  return str:gsub('_', '\\_'):gsub('*', '\\*'):gsub('`', '\\`')
+end
+
 return M

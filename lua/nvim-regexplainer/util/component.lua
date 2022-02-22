@@ -7,6 +7,7 @@ local M = {}
 local component_types = {
   'alternation',
   'boundary_assertion',
+  'lookahead_assertion',
   'character_class',
   'character_class_escape',
   'class_range',
@@ -23,6 +24,11 @@ local common_keys = {
   'text',
   'depth',
 }
+
+-- keep track of how many captures we've seen
+-- make sure to unset when finished an entire regexp
+--
+local capture_tally = 0
 
 local lookuptables = {}
 setmetatable(lookuptables, {__mode = "v"})  -- make values weak
@@ -64,7 +70,10 @@ function M.is_identity_escape(component)
   return component.type == 'identity_escape'
       -- `\d` and `\s` are for some reason considered identity escapes by treesitter
      and component.text:gmatch('[ds]') == nil
+end
 
+function M.is_look_assertion(component)
+  return component.type:find('^look%a+_assertion') ~= nil
 end
 
 -- Does a container component contain nothing by pattern_characters?
@@ -109,11 +118,6 @@ function M.is_special_character(component)
      and component.type ~= 'pattern_character'
 end
 
--- keep track of how many captures we've seen
--- make sure to unset when finished an entire regexp
---
-local capture_tally = 0
-
 -- Transform a treesitter node to a table of components which are easily rendered
 --
 function M.make_components(node, parent, root_regex_node)
@@ -138,7 +142,7 @@ function M.make_components(node, parent, root_regex_node)
 
     local previous = components[#components]
 
-    local function append_previous()
+    local function append_previous(props)
       if M.is_simple_pattern_character(previous) and #previous.text > 1 then
         local last_char = previous.text:sub(-1)
         previous.text = previous.text:sub(1, -2)
@@ -146,22 +150,16 @@ function M.make_components(node, parent, root_regex_node)
         table.insert(components, { type = 'pattern_character', text = last_char })
         previous = components[#components]
       end
+      components[#components] = vim.tbl_deep_extend('force', previous, props)
+      return previous
     end
 
     -- the following node types should not be added to the component tree
     -- instead, they should merely modify the previous node in the tree
-    if type == 'optional'             then
-      append_previous()
-      previous.optional      = true
-    elseif type == 'one_or_more'      then
-      append_previous()
-      previous.one_or_more   = true
-    elseif type == 'zero_or_more'     then
-      append_previous()
-      previous.zero_or_more  = true
+    if type == 'optional' or type == 'one_or_more' or type == 'zero_or_more' then
+      append_previous { [type] = true }
     elseif type == 'count_quantifier' then
-      append_previous()
-      previous.quantifier    = descriptions.describe_quantifier(child)
+      append_previous { quantifier = descriptions.describe_quantifier(child) }
 
     -- pattern characters and simple escapes can be collapsed together
     -- so long as they are not immediately followed by a modifier
@@ -174,10 +172,7 @@ function M.make_components(node, parent, root_regex_node)
       previous.text = previous.text .. ts_utils.get_node_text(child)[1]:sub(1, -1)
 
     elseif type == 'start_assertion' then
-      table.insert(components, {
-        type = type,
-        text = '^',
-      })
+      table.insert(components, { type = type, text = '^' })
 
     -- all other node types should be added to the tree
     else
@@ -209,7 +204,8 @@ function M.make_components(node, parent, root_regex_node)
         table.insert(components, component)
 
       -- skip group_name and punctuation nodes
-      elseif type ~= 'group_name' and not node_pred.is_punctuation(type) then
+      elseif type ~= 'group_name'
+         and not node_pred.is_punctuation(type) then
         if node_pred.is_container(child) then
 
           -- increment the capture group tally
@@ -226,6 +222,13 @@ function M.make_components(node, parent, root_regex_node)
                 break
               end
             end
+          end
+
+          if node_pred.is_look_assertion(child) then
+            local _, _, sign  = string.find(text, '%(%?<?([=!])')
+            component.type = type
+            component.negative = sign == '!'
+            component.depth = (parent and parent.depth or 0) + 1
           end
 
           -- once state has been set above, process the children

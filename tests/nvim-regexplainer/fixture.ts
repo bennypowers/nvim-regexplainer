@@ -2,7 +2,7 @@
 /hello/;
 
 /** modifiers and escape chars */
-/hello!?/;
+/hello!?/; 
 /hello\.?/;
 
 /** special characters */
@@ -13,6 +13,7 @@
 /@hello[a-z]/;
 /a{1}b{2,}c{3,5}d*e+/g;
 /\b[a-z0-9._%+-]+@hello[a-z0-9.-]+\.[a-z]{2,}\b/;
+/[\w\b\d\s\t\n\r]/;
 
 /** capture group */
 /(hello)/;
@@ -36,11 +37,23 @@
 /(one|two|three)/;
 /zero|bupkis|gornisht|(one|two|three|(four|five))/;
 
+/** lookaheads and lookbehinds */
+/@(?=u)@/;
+/@(?!u)@/;
+/@(?=up|down){2,3}@/;
+/@(?![\w\s])@/;
+/@(?=g(?:raph)?ql)@/;
+
 /** practical examples */
 /^@scope\/(.*)\.js";?$/;
-/@scope\/(.*)\.(?:graphql|(?:t|j|cs)s)";?/;
+/@scope\/(.*)\.(?<extension>graphql|(?:t|j|cs)s)";?/;
 /\.js";?/;
 /js";?/;
 
 /** errors */
 /@scope\/(.*)\.{graphql,js,ts,css}/;
+
+
+
+
+

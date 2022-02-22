@@ -12,6 +12,8 @@ local node_types = {
   'document',
   'group_name',
   'identity_escape',
+  'lookahead_assertion',
+  'lookbehind_assertion',
   'named_capturing_group',
   'non_capturing_group',
   'pattern',
@@ -42,6 +44,8 @@ function M. is_container(node)
       type == 'anonymous_capturing_group' or
       type == 'alternation'               or
       type == 'character_class'           or
+      type == 'lookahead_assertion'       or
+      type == 'lookbehind_assertion'      or
       type == 'named_capturing_group'     or
       type == 'non_capturing_group'       or
       type == 'pattern'                   or
@@ -60,10 +64,13 @@ function M.is_punctuation(type)
     type == ')'   or
     type == '['   or
     type == ']'   or
-    type == '(?<' or
-    type == '(?:' or
+    type == '!'   or
+    type == '='   or
     type == '>'   or
     type == '|'   or
+    type == '(?<' or
+    type == '(?:' or
+    type == '(?'  or
     false
   )
 end
@@ -89,6 +96,11 @@ end
 --
 function M.is_upwards_stop(node)
   return node:type() == 'pattern' or M.is_document(node)
+end
+
+-- Is it a lookahead or lookbehind assertion?
+function M.is_look_assertion(node)
+  return require'nvim-regexplainer.util.component'.is_look_assertion { type = node:type() }
 end
 
 return M
