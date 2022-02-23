@@ -1,5 +1,6 @@
 local ts_utils    = require'nvim-treesitter.ts_utils'
-local utils       = require'regexplainer.util.utils'
+local utils       = require'regexplainer.utils'
+local component_pred = require'regexplainer.component'
 
 local M = {}
 
@@ -28,15 +29,15 @@ end
 -- Given `[A-Z0-9._%+_]`, return `'A-Z, 0-9, ., _, %, +, or -'`
 --
 function M.describe_character_class(component)
-  local description = ''
+  local description = 'One of '
   for i, child in ipairs(component.children) do
     -- TODO: lua equivalent of Intl?
     local oxford = (#component.children > 1 and i == #component.children) and 'or ' or ''
     local initial_sep = i == 1 and '' or ', '
     local text = utils.escape_markdown(child.text)
 
-    if require'regexplainer.util.component'.is_control_escape(child) then
-      text = '**' .. M.describe_control_escape(text:sub(2)) .. '**'
+    if component_pred.is_control_escape(child) then
+      text = '**' .. M.describe_control_escape(text:gsub([[\\]], [[\]]):sub(2)) .. '**'
     end
 
     description = description .. initial_sep .. oxford .. text

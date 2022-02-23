@@ -57,7 +57,7 @@ You can call `show` with your own display type to override your config
 require'regexplainer'.show { display = 'split' }
 ```
 
-Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`
+Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`. `RegexplainerHide` is also available.
 
 ### Render Options
 
@@ -87,6 +87,7 @@ Input:
 
 Output: 
 
+```md
 `zero`  
 capture group 1:  
 > `one`  
@@ -94,6 +95,7 @@ capture group 1:
 > > `two`  
 > > capture group 3:  
 > > > `three`
+```
 
 ## 🗃️  TODO list
 - [ ] Display Regexp [railroad diagrams](https://github.com/tabatkins/railroad-diagrams/)

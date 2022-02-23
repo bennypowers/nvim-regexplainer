@@ -1,5 +1,8 @@
-local utils  = require'regexplainer.util.utils'
-local module = require'regexplainer.module'
+local ts_utils  = require'nvim-treesitter.ts_utils'
+local component = require'regexplainer.component'
+local tree      = require'regexplainer.utils.treesitter'
+local utils     = require'regexplainer.utils'
+local buffers   = require'regexplainer.buffers'
 
 local M = {}
 
@@ -32,6 +35,47 @@ local default_config = {
 
 local local_config = default_config
 
+-- Show the explainer for the regexp under the cursor
+--
+local function show(options)
+  local node = tree.get_regexp_pattern_at_cursor()
+  if node then
+    -- in the case of a pattern node, we need to get the first child  🤷
+    if node:type() == 'pattern' and node:child_count() == 1 then
+      node = node:child(0)
+    end
+
+    local can_render, renderer = pcall(require, 'regexplainer.renderers.'.. options.mode)
+
+    if not can_render then
+      utils.notify(options.mode .. ' is not a valid renderer', 'warning')
+      utils.notify(renderer, 'error')
+
+      renderer = require'regexplainer.renderers.narrative'
+    end
+
+    local components = component.make_components(node, nil, node)
+
+    -- Text of the entire regexp
+    options.full_regexp_text = ts_utils.get_node_text(node)[1]
+
+    local buffer = buffers.get_buffer(options)
+
+    if not buffer then
+      utils.notify('' .. options.full_regexp_text .. '\n\nCOMPONENTS:\n' .. vim.inspect(components))
+      return
+    end
+
+    buffers.render(buffer, renderer, options, components)
+  else
+    M.hide()
+  end
+end
+
+local debounced_show = require'regexplainer.utils.defer'.debounce_trailing(function(config)
+  return show(vim.tbl_deep_extend('keep', config or {}, local_config))
+end, 5)
+
 -- merge in the user config and setup key bindings
 M.setup = function(config)
   local_config = vim.tbl_deep_extend('keep', config or {}, default_config)
@@ -62,8 +106,14 @@ M.setup = function(config)
   end
 end
 
-M.show = function(config)
-  module.show(vim.tbl_deep_extend('keep', config or {}, local_config))
+-- Explain the regexp under the cursor
+--
+M.show = debounced_show
+
+-- Hide any displayed regexplainer buffers
+--
+M.hide = function()
+  buffers.hide_last()
 end
 
 return M

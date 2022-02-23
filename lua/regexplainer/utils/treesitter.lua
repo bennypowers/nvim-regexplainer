@@ -76,7 +76,7 @@ function M.is_punctuation(type)
 end
 
 function M.is_control_escape(node)
-  return require'regexplainer.util.component'.is_control_escape {
+  return require'regexplainer.component'.is_control_escape {
     type = node:type(),
     text = ts_utils.get_node_text(node)[1],
   }
@@ -85,8 +85,8 @@ end
 -- Is this the document root (or close enough for our purposes)?
 --
 function M.is_document(node)
-  return node
-     and node:type() == 'chunk'
+  return node == nil
+      or node:type() == 'chunk'
       or node:type() == 'program'
       or node:type() == 'document'
       or node:type() == 'source'
@@ -100,7 +100,70 @@ end
 
 -- Is it a lookahead or lookbehind assertion?
 function M.is_look_assertion(node)
-  return require'regexplainer.util.component'.is_look_assertion { type = node:type() }
+  return require'regexplainer.component'.is_look_assertion { type = node:type() }
+end
+
+-- Using treesitter, find the current node at cursor, and traverse up to the
+-- document root to determine if we're on a regexp
+--
+function M.get_regexp_pattern_at_cursor()
+  local cursor_node = ts_utils.get_node_at_cursor()
+  if not cursor_node or cursor_node:type() == 'program' then return end
+
+  local node = cursor_node
+
+  if node:type() == 'regex' then
+    local iterator = node:iter_children()
+    -- break if we enter an infinite loop (probably)
+    local guard = 0
+    local GUARD_MAX = 100000
+    while node == cursor_node do
+      guard = guard + 1
+      local next = iterator()
+
+      if guard > GUARD_MAX then
+        if next then vim.notify('stuck on ' .. next:type()) end
+        return
+      end
+
+      if not next then
+        return
+      end
+
+      local type = next:type()
+
+      if type == 'pattern' then
+        node = next
+      elseif type == 'regex_pattern' or type == 'regex' then
+        -- cribbed from get_node_at_cursor impl
+        local parsers = require "nvim-treesitter.parsers"
+        local root_lang_tree = parsers.get_parser(0)
+        local row, col = ts_utils.get_node_range(next)
+
+        local root = ts_utils.get_root_for_position(row, col + 1 --[[hack that works for js]], root_lang_tree)
+
+        if not root then
+          return
+        end
+
+        node = root:named_descendant_for_range(row, col + 1, row, col + 1)
+      end
+    end
+  end
+
+  while not M.is_upwards_stop(node) do
+    local _node = node
+    node = ts_utils.get_previous_node(node, true, true)
+    if not node then
+      node = ts_utils.get_root_for_node(_node)
+    end
+  end
+
+  if node == cursor_node or M.is_document(node) then
+    return
+  end
+
+  return node
 end
 
 return M

@@ -14,12 +14,23 @@ function M.map(mode, lhs, rhs, opts)
   end
 end
 
+-- Composes vim.inspect witht vim.notify
+--
 function M.notify(value, level)
   return vim.notify(vim.inspect(value), level)
 end
 
+-- Escape markdown syntax in a given string
+--
 function M.escape_markdown(str)
-  return str:gsub('_', '\\_'):gsub('*', '\\*'):gsub('`', '\\`')
+  -- return str
+  --   :gsub('_',   [[\_]])
+  --   :gsub('\\', [[\\]])
+  --   :gsub('*',   [[\*]])
+  --   :gsub('`',   [[\`]])
+  --   :gsub('>',   [[\>]])
+  --   :gsub('<',   [[\<]])
+  return string.gsub(str, [==[([\_*`><])]==], [[\%1]])
 end
 
 return M

@@ -1,6 +1,5 @@
 local ts_utils            = require'nvim-treesitter.ts_utils'
-local descriptions        = require'regexplainer.util.descriptions'
-local node_pred           = require'regexplainer.util.treesitter'
+local node_pred           = require'regexplainer.utils.treesitter'
 
 local M = {}
 
@@ -159,7 +158,9 @@ function M.make_components(node, parent, root_regex_node)
     if type == 'optional' or type == 'one_or_more' or type == 'zero_or_more' then
       append_previous { [type] = true }
     elseif type == 'count_quantifier' then
-      append_previous { quantifier = descriptions.describe_quantifier(child) }
+      append_previous {
+        quantifier = require'regexplainer.component.descriptions'.describe_quantifier(child),
+      }
 
     -- pattern characters and simple escapes can be collapsed together
     -- so long as they are not immediately followed by a modifier
@@ -174,6 +175,44 @@ function M.make_components(node, parent, root_regex_node)
     elseif type == 'start_assertion' then
       table.insert(components, { type = type, text = '^' })
 
+    -- handle errors
+    -- treesitter does not appear to support js lookbehinds
+    -- see https://github.com/tree-sitter/tree-sitter-javascript/issues/214
+    --
+    elseif type == 'ERROR' then
+      local error_text = ts_utils.get_node_text(child)[1]
+      local row, e_start, _, e_end = child:range()
+      local _, re_start = node:range()
+
+      -- TODO: until treesitter supports lookbehind, we can parse it ourselves
+      -- This code, however, is not ready to use
+
+      -- local from_re_start_to_err_start = e_start - re_start + 1
+      --
+      -- local error_term_text = text:sub(from_re_start_to_err_start)
+      --
+      -- local is_lookbehind = error_term_text:find[[^%(%?<!?]]
+      --
+      -- if is_lookbehind ~= nil then
+      --   local is_negative = error_term_text:find[[%(%?<!]]
+      --   table.insert(components, {
+      --     type = 'lookbehind_assertion',
+      --     text = error_term_text,
+      --     negative = is_negative ~= nil,
+      --     depth = (parent and parent.depth or 0) + 1,
+      --     children = M.make_components(child, nil, root_regex_node)
+      --   })
+      -- else
+        table.insert(components, {
+          type = type,
+          text = ts_utils.get_node_text(child)[1],
+          error = {
+            text = error_text,
+            position = { row, { e_start, e_end } },
+            start_offset = re_start,
+          },
+        })
+      -- end
     -- all other node types should be added to the tree
     else
 
@@ -181,17 +220,6 @@ function M.make_components(node, parent, root_regex_node)
         type = type,
         text = ts_utils.get_node_text(child)[1],
       }
-
-      if type == 'ERROR' then
-        local srow, scol, erow, ecol = child:range()
-        local _, re_scol = node:start()
-        table.insert(components, vim.tbl_extend('keep', component, {
-          error = {
-            position = { {srow, scol}, {erow, ecol} },
-            start_offset = scol - re_scol
-          }
-        }))
-      end
 
       -- increment `depth` for each layer of capturing groups encountered
       if type:find('capturing_group$') then

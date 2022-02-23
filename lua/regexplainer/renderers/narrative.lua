@@ -1,6 +1,6 @@
-local descriptions           = require'regexplainer.util.descriptions'
-local component_pred         = require'regexplainer.util.component'
-local utils                  = require'regexplainer.util.utils'
+local descriptions           = require'regexplainer.component.descriptions'
+local component_pred         = require'regexplainer.component'
+local utils                  = require'regexplainer.utils'
 
 -- A textual, narrative renderer which describes a regexp in terse prose
 --
@@ -35,11 +35,11 @@ local function get_group_heading(component)
 end
 
 local function get_sublines(component, options)
-  local depth = (options.depth or 0) + 1
+  local depth = (options.narrative.depth or 0) + 1
   local sep = '\n' for _ = 0, depth do sep = sep .. ' ' end
 
-  if type(options.separator) == "function" then
-    sep = options.separator(component)
+  if type(options.narrative.separator) == "function" then
+    sep = options.narrative.separator(component)
   end
 
   local children = component.children
@@ -48,7 +48,11 @@ local function get_sublines(component, options)
     children = children[1].children
   end
 
-  local next_options = vim.tbl_extend('keep', options, { depth = depth })
+  local next_options = vim.tbl_deep_extend('force', options, {
+    narrative = {
+      depth = depth,
+    },
+  })
 
   return M.get_lines(children, next_options), sep
 
@@ -61,7 +65,7 @@ local function get_narrative_clause(component, options, first, last)
 
   if first and not last then
     prefix = ''
-  elseif not options.depth and last and not first then
+  elseif not options.narrative.depth and last and not first then
     prefix = ''
   end
 
@@ -105,8 +109,8 @@ local function get_narrative_clause(component, options, first, last)
 
   if component_pred.is_look_assertion(component) then
     local negation = component.negative and 'NOT ' or ''
-    local direction = component_pred.is_lookahead_assertion(component) and 'followed' or 'preceeded'
-    prefix = '**' .. negation .. direction .. ' by' .. '**'
+    local direction = component_pred.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
+    prefix = '**' .. negation .. direction .. ' ' .. '**'
 
     local sublines, sep = get_sublines(component, options)
     local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
@@ -158,12 +162,14 @@ function M.get_lines(components, options)
     local last = i == #components
     if component.type == 'ERROR' then
       lines[1] = '🚨 **Regexp contains an ERROR** at'
-      lines[2] = components[i + 1].text
-      lines[3] = ''
-      for _ = 1, component.error.position[1][2] - component.error.start_offset do
+      lines[2] = '`' .. options.full_regexp_text ..  '`'
+      lines[3] = ' '
+      local error_start_col = component.error.position[2][1]
+      local from_re_start_to_err_start = error_start_col - component.error.start_offset + 1
+      for _ = 1, from_re_start_to_err_start do
         lines[3] = lines[3] .. ' '
       end
-      lines[3] = lines[3] .. '👆'
+      lines[3] = lines[3] .. '^'
       return lines
     end
     local next_clause = get_narrative_clause(component,
@@ -177,7 +183,7 @@ function M.get_lines(components, options)
     end
   end
 
-  local separator = options.separator
+  local separator = options.narrative.separator
   if type(separator) == "function" then
     separator = separator({ type = 'root', depth = 0 })
   end
@@ -186,16 +192,17 @@ function M.get_lines(components, options)
 
   for line in narrative:gmatch("([^\n]*)\n?") do
     if #line > 0 then
-      table.insert(lines, (line:gsub('^ +End', 'End')))
+      -- table.insert(lines, (line:gsub('^ +End', 'End')))
+      table.insert(lines, line)
     end
   end
 
   return lines
 end
 
-function M.set_lines(buf, lines)
-  vim.api.nvim_win_call(buf.winid, function()
-    vim.lsp.util.stylize_markdown(buf.bufnr, lines)
+function M.set_lines(buffer, lines)
+  vim.api.nvim_win_call(buffer.winid, function()
+    vim.lsp.util.stylize_markdown(buffer.bufnr, lines)
   end)
   return lines
 end

@@ -1,6 +1,16 @@
-local utils   = require'regexplainer.util.utils'
+local utils   = require'regexplainer.utils'
 local autocmd = require'nui.utils.autocmd'
 local event   = autocmd.event
+
+-- Functions to create or modify the buffer which displays the regexplanation
+--
+local M = {}
+
+local last = {
+  parent = nil,
+  split = nil,
+  popup = nil,
+}
 
 local shared_options = {
   enter = false,
@@ -12,12 +22,9 @@ local shared_options = {
   },
   win_options = {
     wrap = true,
-    conceallevel = 3,
+    conceallevel = 2,
   },
 }
-
-local last_split
-local last_popup
 
 local function get_class_name(object)
   local passed, class_name = pcall(function()
@@ -38,24 +45,26 @@ local function is_split(buffer)
   return get_class_name(buffer) == 'NuiSplit'
 end
 
--- Functions to create or modify the buffer which displays the regexplanation
---
-local M = {}
-
 -- Get the buffer in which to render the explainer
 --
-function M.get_buffer(options, parent)
+function M.get_buffer(options)
+  last.parent = {
+    winnr = vim.api.nvim_get_current_win(),
+    bufnr = vim.api.nvim_get_current_buf(),
+  }
   local buffer
   if options.display == 'split' then
-    if last_split then return last_split end
+    if last.split then
+      return last.split
+    end
     buffer = require'nui.split'(vim.tbl_deep_extend('keep', shared_options, {
       relative = 'editor',
       position = 'bottom',
       size = '20%',
     }))
-    last_split = buffer
+    last.split = buffer
   elseif options.display == 'popup' then
-    if last_popup then return last_popup end
+    if last.popup then return last.popup end
     buffer = require'nui.popup'(vim.tbl_deep_extend('keep', shared_options, {
       position = 1,
       relative = 'cursor',
@@ -65,45 +74,30 @@ function M.get_buffer(options, parent)
         style = 'shadow',
       },
     }))
-    last_popup = buffer
+    last.popup = buffer
   end
-
-  setmetatable(buffer, vim.tbl_deep_extend('keep', getmetatable(buffer), parent))
 
   return buffer
 end
 
-function M.render(buffer, renderer, renderer_options, components)
-  local parent = getmetatable(buffer).parent
+function M.render(buffer, renderer, options, components)
+  local lines = renderer.get_lines(components, options)
 
+  local height = #lines
   if not buffer.mounted then
     buffer:mount()
   end
 
   if is_popup(buffer) then
-    buffer:hide()
-  end
+    local win_width = vim.api.nvim_win_get_width(last.parent.winnr)
 
-  local lines = renderer.get_lines(components, renderer_options)
+    local width = 0
 
-  local height = #lines
-  local width = 0
-
-  for _, line in ipairs(lines) do
-    if #line > width then
-      width = #line
+    for _, line in ipairs(lines) do
+      if #line > width then
+        width = #line
+      end
     end
-  end
-
-  if is_split(buffer) then
-    buffer:on(event.BufUnload, function()
-      last_split = nil
-    end)
-    vim.api.nvim_win_set_height(buffer.winid, height)
-  end
-
-  if is_popup(buffer) then
-    local win_width = vim.api.nvim_win_get_width(buffer.winid)
 
     if (win_width * .75) < width then
       width = '75%'
@@ -111,28 +105,43 @@ function M.render(buffer, renderer, renderer_options, components)
 
     buffer:set_size { width = width, height = height }
 
-    autocmd.buf.define(parent.bufnr, event.CursorMoved, function()
-      -- buffer:unmount()
+    buffer:on({
+      event.BufLeave,
+      event.BufWinLeave,
+      event.CursorMoved,
+    }, function ()
       buffer:hide()
+      buffer:unmount()
     end, { once = true })
-
   end
+
+  buffer:on(event.BufUnload, function()
+    if is_popup(buffer) then last.popup = nil end
+    if is_split(buffer) then last.split = nil end
+  end, { once = true })
 
   renderer.set_lines(buffer, lines)
 
-  vim.api.nvim_set_current_win(parent.winnr)
-  vim.api.nvim_set_current_buf(parent.bufnr)
+  vim.api.nvim_set_current_win(last.parent.winnr)
+  vim.api.nvim_set_current_buf(last.parent.bufnr)
 
-  vim.api.nvim_buf_call(parent.bufnr, function()
-    buffer:on({ event.BufLeave, event.BufWinLeave }, function ()
-      vim.schedule(function()
-        buffer:hide()
-        -- buffer:unmount()
-      end)
-    end, { once = true })
-  end)
+  if is_split(buffer) then
+    vim.api.nvim_win_set_height(buffer.winid, height)
+  end
 
-  buffer:show()
+  if is_popup(buffer) then
+    buffer:show()
+  end
+
+end
+
+M.hide_last = function ()
+  for _, key in ipairs({ 'popup', 'split' }) do
+    if last[key] then
+      last[key]:unmount()
+      last[key] = nil
+    end
+  end
 end
 
 return M
