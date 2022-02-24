@@ -2,6 +2,8 @@ local ts_utils            = require'nvim-treesitter.ts_utils'
 
 local M = {}
 
+local GUARD_MAX = 100000
+
 local node_types = {
   'alternation',
   'boundary_assertion',
@@ -86,6 +88,7 @@ end
 --
 function M.is_document(node)
   return node == nil
+      or node:type() == 'fragment'
       or node:type() == 'chunk'
       or node:type() == 'program'
       or node:type() == 'document'
@@ -95,7 +98,7 @@ end
 -- Should we stop here when traversing upwards through the tree from the cursor node?
 --
 function M.is_upwards_stop(node)
-  return node:type() == 'pattern' or M.is_document(node)
+  return node and node:type() == 'pattern' or M.is_document(node)
 end
 
 -- Is it a lookahead or lookbehind assertion?
@@ -105,65 +108,84 @@ end
 
 -- Using treesitter, find the current node at cursor, and traverse up to the
 -- document root to determine if we're on a regexp
+-- @returns Node, error message
 --
 function M.get_regexp_pattern_at_cursor()
   local cursor_node = ts_utils.get_node_at_cursor()
-  if not cursor_node or cursor_node:type() == 'program' then return end
+  local cursor_node_type = cursor_node and cursor_node:type()
+  if not cursor_node or cursor_node_type == 'program' then
+    return nil, nil
+  end
 
   local node = cursor_node
 
   if node:type() == 'regex' then
     local iterator = node:iter_children()
+
     -- break if we enter an infinite loop (probably)
+    --
     local guard = 0
-    local GUARD_MAX = 100000
     while node == cursor_node do
       guard = guard + 1
+      if guard >= GUARD_MAX then
+        return nil, (node and node:type() or 'nil') .. ' after ' .. GUARD_MAX
+      end
+
       local next = iterator()
 
-      if guard > GUARD_MAX then
-        if next then vim.notify('stuck on ' .. next:type()) end
-        return
-      end
-
       if not next then
-        return
-      end
+        return nil, 'no downwards node'
+      else
+        local type = next:type()
 
-      local type = next:type()
+        if type == 'pattern' then
+          node = next
+        elseif type == 'regex_pattern' or type == 'regex' then
+          -- cribbed from get_node_at_cursor impl
+          local parsers = require "nvim-treesitter.parsers"
+          local root_lang_tree = parsers.get_parser(0)
+          local row, col = ts_utils.get_node_range(next)
 
-      if type == 'pattern' then
-        node = next
-      elseif type == 'regex_pattern' or type == 'regex' then
-        -- cribbed from get_node_at_cursor impl
-        local parsers = require "nvim-treesitter.parsers"
-        local root_lang_tree = parsers.get_parser(0)
-        local row, col = ts_utils.get_node_range(next)
+          local root = ts_utils.get_root_for_position(row, col + 1 --[[hack that works for js]], root_lang_tree)
 
-        local root = ts_utils.get_root_for_position(row, col + 1 --[[hack that works for js]], root_lang_tree)
+          if not root then
+            return nil, 'no node immediately to the right of the regexp node'
+          end
 
-        if not root then
-          return
+          node = root:named_descendant_for_range(row, col + 1, row, col + 1)
         end
-
-        node = root:named_descendant_for_range(row, col + 1, row, col + 1)
       end
     end
   end
 
+  -- break if we enter an infinite loop (probably)
+  --
+  local guard = 0
   while not M.is_upwards_stop(node) do
+    guard = guard + 1
+    if guard >= GUARD_MAX then
+      return nil, (node and node:type() or 'nil') .. ' after ' .. GUARD_MAX
+    end
+
     local _node = node
     node = ts_utils.get_previous_node(node, true, true)
     if not node then
       node = ts_utils.get_root_for_node(_node)
+      if not node then
+        return nil, 'no upwards node'
+      end
     end
   end
 
-  if node == cursor_node or M.is_document(node) then
-    return
+  if M.is_document(node) then
+    return nil, nil
+  elseif node == cursor_node then
+    return nil, 'stuck on cursor_node'
+  elseif not node then
+    return nil, 'unexpected no downwards node'
   end
 
-  return node
+  return node, nil
 end
 
 return M

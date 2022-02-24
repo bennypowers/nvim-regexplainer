@@ -38,8 +38,11 @@ local local_config = default_config
 -- Show the explainer for the regexp under the cursor
 --
 local function show(options)
-  local node = tree.get_regexp_pattern_at_cursor()
-  if node then
+  local node, error = tree.get_regexp_pattern_at_cursor()
+
+  if error then
+    vim.notify('error is ' ..error)
+  elseif node then
     -- in the case of a pattern node, we need to get the first child  🤷
     if node:type() == 'pattern' and node:child_count() == 1 then
       node = node:child(0)
