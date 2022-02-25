@@ -77,22 +77,26 @@ function M.is_punctuation(type)
   )
 end
 
+-- Is this the document root (or close enough for our purposes)?
+--
+function M.is_document(node)
+  return node == nil
+      or node:type() == 'program'
+      or node:type() == 'document'
+      or node:type() == 'source'
+      or node:type() == 'source_file'
+      or node:type() == 'fragment'
+      or node:type() == 'chunk'
+      -- if we're in an embedded language
+      or node:type() == 'stylesheet'
+      or node:type() == 'haskell'
+end
+
 function M.is_control_escape(node)
   return require'regexplainer.component'.is_control_escape {
     type = node:type(),
     text = ts_utils.get_node_text(node)[1],
   }
-end
-
--- Is this the document root (or close enough for our purposes)?
---
-function M.is_document(node)
-  return node == nil
-      or node:type() == 'fragment'
-      or node:type() == 'chunk'
-      or node:type() == 'program'
-      or node:type() == 'document'
-      or node:type() == 'source'
 end
 
 -- Should we stop here when traversing upwards through the tree from the cursor node?
@@ -128,7 +132,7 @@ function M.get_regexp_pattern_at_cursor()
     while node == cursor_node do
       guard = guard + 1
       if guard >= GUARD_MAX then
-        return nil, (node and node:type() or 'nil') .. ' after ' .. GUARD_MAX
+        return nil, 'loop exceeded ' .. GUARD_MAX .. ' at node ' .. (node and node:type() or 'nil')
       end
 
       local next = iterator()
@@ -164,7 +168,7 @@ function M.get_regexp_pattern_at_cursor()
   while not M.is_upwards_stop(node) do
     guard = guard + 1
     if guard >= GUARD_MAX then
-      return nil, (node and node:type() or 'nil') .. ' after ' .. GUARD_MAX
+      return nil, 'loop exceeded ' .. GUARD_MAX .. ' at node ' .. (node and node:type() or 'nil')
     end
 
     local _node = node

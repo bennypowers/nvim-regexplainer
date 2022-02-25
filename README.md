@@ -31,6 +31,9 @@ require'regexplainer'.setup {
   -- automatically show the explainer when the cursor enters a regexp
   auto = false,
 
+  -- Whether to log debug messages
+  debug = false, 
+
   -- 'split', 'popup'
   display = 'popup',
 
@@ -49,7 +52,8 @@ Set to `split` to display the explainer in a window below the editor.
 The window will be reused, and has the filetype `Regexplainer`
 
 Set to `popup` (the default) to display the explainer in a popup below the cursor.
-When the cursor moves, the popup closes.
+When the cursor moves, the popup closes. if `auto` is set, the popup will automatically display
+whenever the cursor moves inside a regular expression
 
 You can call `show` with your own display type to override your config
 
@@ -57,7 +61,8 @@ You can call `show` with your own display type to override your config
 require'regexplainer'.show { display = 'split' }
 ```
 
-Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`. `RegexplainerHide` is also available.
+Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`.
+`RegexplainerHide` is also available.
 
 ### Render Options
 
@@ -82,7 +87,7 @@ narrative = {
 
 Input: 
 ```js
-/zero(one(two(three)))/;
+/zero(one(two(?<inner>three)))/;
 ```
 
 Output: 
@@ -93,7 +98,7 @@ capture group 1:
 > `one`  
 > capture group 2:  
 > > `two`  
-> > capture group 3:  
+> > named capture group 3 `inner`:  
 > > > `three`
 ```
 
