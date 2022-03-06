@@ -81,6 +81,7 @@ end
 --
 function M.is_document(node)
   return node == nil
+      or node:type() == 'ERROR' -- quit early, avoid the headache
       or node:type() == 'program'
       or node:type() == 'document'
       or node:type() == 'source'

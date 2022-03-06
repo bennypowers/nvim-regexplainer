@@ -44,7 +44,7 @@ local function show(options)
   local node, error = tree.get_regexp_pattern_at_cursor()
 
   if error and options.debug then
-    vim.notify('Rexexplainer: ' .. error, 'debug')
+    utils.notify('Rexexplainer: ' .. error, 'debug')
   elseif node then
     -- in the case of a pattern node, we need to get the first child  🤷
     if node:type() == 'pattern' and node:child_count() == 1 then
