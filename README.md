@@ -5,7 +5,7 @@
 
 Describe the regular expression under the cursor.
 
-[![asciicast](https://asciinema.org/a/maz66tjNhpKgdwPOdTPV4CWJo.svg)](https://asciinema.org/a/maz66tjNhpKgdwPOdTPV4CWJo)
+https://user-images.githubusercontent.com/1466420/156946492-a05600dc-0a5b-49e6-9ad2-417a403909a8.mov
 
 Heavily inspired by the venerable [atom-regexp-railroad](https://github.com/klorenz/atom-regex-railroad-diagrams/).
 
