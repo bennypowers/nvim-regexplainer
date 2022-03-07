@@ -69,7 +69,7 @@ function M.get_buffer(options)
       position = 1,
       relative = 'cursor',
       size = 1,
-      border = {
+      border = (options and options.popup and options.popup.border) or {
         padding = { 1, 2 },
         style = 'shadow',
       },

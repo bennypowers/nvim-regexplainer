@@ -64,6 +64,25 @@ require'regexplainer'.show { display = 'split' }
 Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`.
 `RegexplainerHide` is also available.
 
+You can customize the popup window by specifying `options.popup.border`,
+which is a table of [popup options from nui](https://github.com/MunifTanjim/nui.nvim/tree/main/lua/nui/popup#border)
+Currently, only `border` is supported, and any options specified override the defaults,
+they are not merged with the default values.
+
+```lua
+require'regexplainer'.show {
+  display = 'popup',
+  popup = {
+    border = {
+      padding = { 1, 2 },
+      style = 'solid',
+    },
+  },
+}
+```
+
+You could use this to, for example, set a different border based on the state of your editor.
+
 ### Render Options
 
 `narrative.separator` can also be a function taking the current component and
