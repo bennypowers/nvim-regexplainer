@@ -38,6 +38,8 @@ function M.describe_character_class(component)
 
     if component_pred.is_control_escape(child) then
       text = '**' .. M.describe_control_escape(text:gsub([[\\]], [[\]]):sub(2)) .. '**'
+    else
+      text = '`' .. text .. '`'
     end
 
     description = description .. initial_sep .. oxford .. text
