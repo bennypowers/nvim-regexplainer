@@ -15,6 +15,9 @@
 /\b[a-z0-9._%+-]+@hello[a-z0-9.-]+\.[a-z]{2,}\b/;
 /[\w\b\d\s\t\n\r]/;
 
+/** Negated range */
+/^p[^p^a]*p/;
+
 /** capture group */
 /(hello)/;
 /(hello)(world)/;

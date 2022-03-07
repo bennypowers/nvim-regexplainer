@@ -62,6 +62,7 @@ end
 --
 function M.is_punctuation(type)
   return (
+    type == '^'   or
     type == '('   or
     type == ')'   or
     type == '['   or

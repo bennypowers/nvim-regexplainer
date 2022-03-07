@@ -29,7 +29,7 @@ end
 -- Given `[A-Z0-9._%+_]`, return `'A-Z, 0-9, ., _, %, +, or -'`
 --
 function M.describe_character_class(component)
-  local description = 'One of '
+  local description = (component.negative and 'Any except ' or 'One of ')
   for i, child in ipairs(component.children) do
     -- TODO: lua equivalent of Intl?
     local oxford = (#component.children > 1 and i == #component.children) and 'or ' or ''

@@ -226,8 +226,14 @@ function M.make_components(node, parent, root_regex_node)
         component.depth = (parent and parent.depth or 0) + 1
       end
 
+      -- negated character class
+      if type == 'character_class' and component.text:find("^%[%^") then
+        component.negative = true
+        component.children = M.make_components(child, nil, root_regex_node)
+        table.insert(components, component)
+
       -- alternations are containers which do not increase depth
-      if type == 'alternation' then
+      elseif type == 'alternation' then
         component.children = M.make_components(child, nil, root_regex_node)
         table.insert(components, component)
 
