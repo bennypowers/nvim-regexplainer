@@ -11,7 +11,7 @@ function M.describe_quantifier(quantifier_node)
   local text = ts_utils.get_node_text(quantifier_node)[1]
   if text:match',' then
     local matches = {}
-    for match in text:gmatch'%d' do
+    for match in text:gmatch'%d+' do
         table.insert(matches, match)
     end
     local min = matches[1]
