@@ -7,11 +7,21 @@ local buffers   = require'regexplainer.buffers'
 local M = {}
 
 local config_command_map = {
-  show = 'RegexplainerShow',
+  show   = 'RegexplainerShow',
+  hide   = 'RegexplainerHide',
+  toggle = 'RegexplainerToggle',
+
+  showSplit = 'RegexplainerShowSplit',
+  showPopup = 'RegexplainerShowPopup',
 }
 
 local config_command_description_map = {
-  show = 'Explain the regexp under the cursor',
+  show   = 'Show Regexplainer',
+  hide   = 'Hide Regexplainer',
+  toggle = 'Toggle Regexplainer',
+
+  showSplit = 'Show Regexplainer in a split Window',
+  showPopup = 'Show Regexplainer in a popup',
 }
 
 local default_config = {
@@ -28,7 +38,7 @@ local default_config = {
   display = 'popup',
 
   mappings = {
-    show = 'gR',
+    toggle = 'gR',
   },
 
   narrative = {
@@ -103,13 +113,14 @@ M.setup = function(config)
   if local_config.auto then
     vim.cmd [[
       augroup Regexplainer
+        au!
         autocmd CursorMoved *.html,*.js,*.ts RegexplainerShow
       augroup END
     ]]
   end
 end
 
--- Explain the regexp under the cursor
+-- Explain the regular expression under the cursor
 --
 M.show = debounced_show
 
@@ -119,4 +130,15 @@ M.hide = function()
   buffers.hide_all()
 end
 
+-- Toggle Regexplainer
+--
+M.toggle = function()
+  if buffers.is_open() then
+    M.hide()
+  else
+    M.show()
+  end
+end
+
 return M
+
