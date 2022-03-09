@@ -6,6 +6,10 @@ local event   = autocmd.event
 --
 local M = {}
 
+local all_buffers = {}
+
+-- TODO: remove this, or only store the last parent,
+-- push and pop from all_buffers instead
 local last = {
   parent = nil,
   split = nil,
@@ -77,6 +81,8 @@ function M.get_buffer(options)
     last.popup = buffer
   end
 
+  table.insert(all_buffers, buffer);
+
   return buffer
 end
 
@@ -110,38 +116,61 @@ function M.render(buffer, renderer, options, components)
       event.BufWinLeave,
       event.CursorMoved,
     }, function ()
-      buffer:hide()
-      buffer:unmount()
+      M.kill_buffer(buffer)
     end, { once = true })
   end
 
-  buffer:on(event.BufUnload, function()
-    if is_popup(buffer) then last.popup = nil end
-    if is_split(buffer) then last.split = nil end
-  end, { once = true })
-
   renderer.set_lines(buffer, lines)
 
-  vim.api.nvim_set_current_win(last.parent.winnr)
-  vim.api.nvim_set_current_buf(last.parent.bufnr)
-
   if is_split(buffer) then
+    vim.api.nvim_set_current_win(last.parent.winnr)
+    vim.api.nvim_set_current_buf(last.parent.bufnr)
     vim.api.nvim_win_set_height(buffer.winid, height)
   end
 
-  if is_popup(buffer) then
-    buffer:show()
-  end
+  autocmd.buf.define(last.parent.bufnr, {
+    event.BufHidden,
+    event.BufLeave,
+  }, function ()
+    M.kill_buffer(buffer)
+  end)
+end
 
+M.kill_buffer = function(buffer)
+  if buffer then
+    pcall(function () buffer:hide() end)
+    pcall(function () buffer:unmount() end)
+    for i, buf in ipairs(all_buffers) do
+      if buf == buffer then
+        table.remove(all_buffers, i)
+      end
+    end
+    for _, key in ipairs({ 'popup', 'split' }) do
+      if last[key] == buffer then
+        last[key] = nil
+        last.parent = nil
+      end
+    end
+  end
 end
 
 M.hide_last = function ()
-  for _, key in ipairs({ 'popup', 'split' }) do
-    if last[key] then
-      last[key]:unmount()
-      last[key] = nil
-    end
+  M.kill_buffer(last.popup)
+  M.kill_buffer(last.split)
+end
+
+M.hide_all = function ()
+  for _, buffer in ipairs(all_buffers) do
+    M.kill_buffer(buffer)
+    last.parent = nil
+    last.split = nil
+    last.popup = nil
   end
+end
+
+M.debug_buffers = function()
+  utils.notify(all_buffers)
+  utils.notify(last)
 end
 
 return M

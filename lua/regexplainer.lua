@@ -74,7 +74,7 @@ local function show(options)
 
     buffers.render(buffer, renderer, options, components)
   else
-    M.hide()
+    buffers.hide_all()
   end
 end
 
@@ -103,10 +103,7 @@ M.setup = function(config)
   if local_config.auto then
     vim.cmd [[
       augroup Regexplainer
-        function! RegexplainerDelayed(...)
-          :RegexplainerShow
-        endfunction
-        autocmd CursorMoved *.html,*.js,*.ts call timer_start(1, 'RegexplainerDelayed')
+        autocmd CursorMoved *.html,*.js,*.ts RegexplainerShow
       augroup END
     ]]
   end
@@ -119,7 +116,7 @@ M.show = debounced_show
 -- Hide any displayed regexplainer buffers
 --
 M.hide = function()
-  buffers.hide_last()
+  buffers.hide_all()
 end
 
 return M
