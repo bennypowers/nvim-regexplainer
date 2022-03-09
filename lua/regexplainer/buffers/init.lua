@@ -77,6 +77,7 @@ function M.get_buffer(options)
         padding = { 1, 2 },
         style = 'shadow',
       },
+      win_options = (options and options.popup and options.popup.win_options) or {},
     }))
     last.popup = buffer
   end
