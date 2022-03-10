@@ -38,7 +38,11 @@ require'regexplainer'.setup {
   display = 'popup',
 
   mappings = {
-    show = 'gR',
+    toggle = 'gR',
+    -- show = 'gS',
+    -- hide = 'gH',
+    -- showSplit = 'gP',
+    -- showPopup = 'gU',
   },
 
   narrative = {
@@ -62,7 +66,7 @@ require'regexplainer'.show { display = 'split' }
 ```
 
 Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`.
-`RegexplainerHide` is also available.
+`RegexplainerHide` and `RegexplainerToggle` are also available.
 
 You can customize the popup window by specifying `options.popup.border`,
 which is a table of [popup options from nui](https://github.com/MunifTanjim/nui.nvim/tree/main/lua/nui/popup#border)

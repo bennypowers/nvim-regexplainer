@@ -174,5 +174,9 @@ M.debug_buffers = function()
   utils.notify(last)
 end
 
+M.is_open = function ()
+  return #all_buffers > 0
+end
+
 return M
 
