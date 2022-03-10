@@ -52,33 +52,35 @@ end
 -- Get the buffer in which to render the explainer
 --
 function M.get_buffer(options)
+  options = options or {}
   last.parent = {
     winnr = vim.api.nvim_get_current_win(),
     bufnr = vim.api.nvim_get_current_buf(),
   }
-  local buffer
+  local buffer, default_options
   if options.display == 'split' then
     if last.split then
       return last.split
     end
-    buffer = require'nui.split'(vim.tbl_deep_extend('keep', shared_options, {
+    default_options = vim.tbl_deep_extend('force', shared_options, {
       relative = 'editor',
       position = 'bottom',
       size = '20%',
-    }))
+    })
+    buffer = require'nui.split'(vim.tbl_deep_extend('force', shared_options, options.split or {}))
     last.split = buffer
   elseif options.display == 'popup' then
     if last.popup then return last.popup end
-    buffer = require'nui.popup'(vim.tbl_deep_extend('keep', shared_options, {
+    default_options = vim.tbl_deep_extend('force', shared_options, {
       position = 1,
       relative = 'cursor',
       size = 1,
-      border = (options and options.popup and options.popup.border) or {
+      border = {
         padding = { 1, 2 },
         style = 'shadow',
       },
-      win_options = (options and options.popup and options.popup.win_options) or {},
-    }))
+    })
+    buffer = require'nui.popup'(vim.tbl_deep_extend('force', default_options, options.popup or {}))
     last.popup = buffer
   end
 
