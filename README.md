@@ -39,6 +39,7 @@ require'regexplainer'.setup {
 
   mappings = {
     toggle = 'gR',
+    -- examples, not defaults:
     -- show = 'gS',
     -- hide = 'gH',
     -- show_split = 'gP',
@@ -123,6 +124,16 @@ capture group 1:
 > > `two`  
 > > named capture group 3 `inner`:  
 > > > `three`
+```
+
+## A Note about Lookbehinds
+
+While https://github.com/tree-sitter/tree-sitter-regex/issues/13 is still open, lookbehind
+support is partial, and results may not be accurate, especially if the term in the lookbehind
+is complex, e.g. 
+
+```js
+/(?<!http|https:\/\/)www\.regex101\.com/;
 ```
 
 ## 🗃️  TODO list

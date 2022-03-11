@@ -110,7 +110,13 @@ end
 
 -- Is it a lookahead or lookbehind assertion?
 function M.is_look_assertion(node)
-  return require'regexplainer.component'.is_look_assertion { type = node:type() }
+  ---@see https://github.com/tree-sitter/tree-sitter-regex/issues/13
+  if node:type() == 'ERROR' then
+    local text = ts_utils.get_node_text(node)
+    return text:match [[^%(%<]]
+  else
+    return require'regexplainer.component'.is_look_assertion { type = node:type() }
+  end
 end
 
 --- Using treesitter, find the current node at cursor, and traverse up to the

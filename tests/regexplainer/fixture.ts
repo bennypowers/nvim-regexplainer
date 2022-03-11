@@ -53,7 +53,7 @@
 /x(?<!u)@/;
 /x(?<=a|b)y/;
 /x(?<![\w\s])@/;
-/(?<=g(?:raph)?ql)@/;
+/(?<=g(?:raph)?ql)`(.*)`/mg;
 
 /** practical examples */
 /^@scope\/(.*)\.js";?$/;

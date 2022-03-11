@@ -245,22 +245,23 @@ function M.make_components(node, parent, root_regex_node)
       -- TODO: until treesitter supports lookbehind, we can parse it ourselves
       -- This code, however, is not ready to use
 
-      -- local from_re_start_to_err_start = e_start - re_start + 1
-      --
-      -- local error_term_text = text:sub(from_re_start_to_err_start)
-      --
-      -- local is_lookbehind = error_term_text:find[[^%(%?<!?]]
-      --
-      -- if is_lookbehind ~= nil then
-      --   local is_negative = error_term_text:find[[%(%?<!]]
-      --   table.insert(components, {
-      --     type = 'lookbehind_assertion',
-      --     text = error_term_text,
-      --     negative = is_negative ~= nil,
-      --     depth = (parent and parent.depth or 0) + 1,
-      --     children = M.make_components(child, nil, root_regex_node)
-      --   })
-      -- else
+      local from_re_start_to_err_start = e_start - re_start + 1
+
+      local error_term_text = text:sub(from_re_start_to_err_start)
+
+      local lookbehind = error_term_text:match[[(%(%?<!?(.*)%))]]
+
+      local is_lookbehind = lookbehind ~= nil
+
+      if is_lookbehind then
+        table.insert(components, {
+          type = 'lookbehind_assertion',
+          text = lookbehind,
+          negative = lookbehind:match[[^%(%?<!]] ~= nil ,
+          depth = (parent and parent.depth or 0) + 1,
+          children = M.make_components(child, nil, root_regex_node)
+        })
+      else
         table.insert(components, {
           type = type,
           text = ts_utils.get_node_text(child)[1],
@@ -270,7 +271,7 @@ function M.make_components(node, parent, root_regex_node)
             start_offset = re_start,
           },
         })
-      -- end
+      end
     -- all other node types should be added to the tree
     else
 

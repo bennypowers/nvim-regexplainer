@@ -130,6 +130,11 @@ local function get_narrative_clause(component, options, first, last)
   end
 
   if component_pred.is_look_assertion(component) then
+    if component.type == 'lookbehind_assertion' then
+      ---@diagnostic disable-next-line: undefined-field
+      options.__lookbehind_found = true
+    end
+
     local negation = component.negative and 'NOT ' or ''
     local direction = component_pred.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
     prefix = '**' .. negation .. direction .. ' ' .. '**'
@@ -221,6 +226,13 @@ function M.get_lines(components, options)
     end
   end
 
+  ---@diagnostic disable-next-line: undefined-field
+  if not options.narrative.depth and options.__lookbehind_found then
+      table.insert(lines, 1, '⚠️ **Lookbehinds are poorly supported**')
+      table.insert(lines, 2, '⚠️ results may not be accurate')
+      table.insert(lines, 3, '⚠️ See https://github.com/tree-sitter/tree-sitter-regex/issues/13')
+      table.insert(lines, 4, '')
+  end
   return lines
 end
 
