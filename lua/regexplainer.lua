@@ -86,7 +86,7 @@ local function show(options)
 
     local buffer = buffers.get_buffer(options)
 
-    if not buffer then
+    if not buffer and options.debug then
       utils.notify('' .. options.full_regexp_text .. '\n\nCOMPONENTS:\n' .. vim.inspect(components))
       return
     end
