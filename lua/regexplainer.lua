@@ -118,6 +118,8 @@ end
 function M.setup(config)
   local_config = vim.tbl_deep_extend('keep', config or {}, default_config)
 
+  buffers.register_timer(timer)
+
   -- bind keys from config
   local has_which_key = pcall(require, 'which-key')
   for cmd, binding in pairs(local_config.mappings) do

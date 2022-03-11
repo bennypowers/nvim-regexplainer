@@ -83,6 +83,23 @@ local function is_split(buffer)
   return get_class_name(buffer) == 'NuiSplit'
 end
 
+---@alias Timer any
+
+---@type Timer
+local last_timer
+
+--- Closes the last timer and replaces it with the new one
+---@param timer Timer
+--
+local function close_last_timer(timer)
+  if last_timer then
+    last_timer:close()
+  end
+  if timer and timer ~= last_timer then
+    last_timer = timer
+  end
+end
+
 -- Functions to create or modify the buffer which displays the regexplanation
 --
 local M = {}
@@ -238,6 +255,14 @@ end
 --
 function M.is_open()
   return #all_buffers > 0
+end
+
+--- **INTERNAL** Register a debounce timer,
+--- so that we can close it to prevent memory leaks when closing buffers
+---@param timer Timer
+--
+function M.register_timer(timer)
+  pcall(close_last_timer, timer)
 end
 
 return M
