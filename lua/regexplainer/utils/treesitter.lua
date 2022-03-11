@@ -82,7 +82,6 @@ end
 --
 function M.is_document(node)
   return node == nil
-      or node:type() == 'ERROR' -- quit early, avoid the headache
       or node:type() == 'program'
       or node:type() == 'document'
       or node:type() == 'source'
@@ -92,6 +91,8 @@ function M.is_document(node)
       -- if we're in an embedded language
       or node:type() == 'stylesheet'
       or node:type() == 'haskell'
+      -- Wha happun?
+      or node:type() == 'ERROR' and not (M.is_pattern(node:parent()) or M.is_term(node:parent()))
 end
 
 function M.is_control_escape(node)
