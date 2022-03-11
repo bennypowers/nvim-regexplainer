@@ -6,7 +6,13 @@ local utils                  = require'regexplainer.utils'
 --
 local M = {}
 
--- get a suffix describing the component's quantifier, optionality, etc
+---@class RegexplainerNarrativeRendererOptions
+---@field depth number # internal tracker for component depth
+---@field separator string|fun(component: Component): string # clause separator
+
+--- Get a suffix describing the component's quantifier, optionality, etc
+---@param component RegexplainerComponent
+---@return string
 --
 local function get_suffix(component)
   local suffix = ''
@@ -26,6 +32,10 @@ local function get_suffix(component)
   return suffix
 end
 
+--- Get a title for a group component
+---@param component RegexplainerComponent
+---@return string
+--
 local function get_group_heading(component)
   local name = component.group_name and ('`'..component.group_name..'`') or ''
 
@@ -34,6 +44,11 @@ local function get_group_heading(component)
        or 'capture group '.. component.capture_group):gsub(' $', '')
 end
 
+--- Get all lines for a recursive component's children
+---@param component RegexplainerComponent
+---@param options   RegexplainerOptions
+---@return string[]
+--
 local function get_sublines(component, options)
   local depth = (options.narrative.depth or 0) + 1
   local sep = '\n' for _ = 0, depth do sep = sep .. ' ' end
@@ -55,9 +70,16 @@ local function get_sublines(component, options)
   })
 
   return M.get_lines(children, next_options), sep
-
 end
 
+--- Get a narrative clause for a component and all it's children
+--- i.e. a single top-level narrative unit
+---@param component RegexplainerComponent
+---@param options   RegexplainerOptions
+---@param first     boolean
+---@param last      boolean
+---@return string
+--
 local function get_narrative_clause(component, options, first, last)
   local prefix = ''
   local infix = ''
@@ -153,6 +175,8 @@ local function get_narrative_clause(component, options, first, last)
   return prefix .. infix .. suffix
 end
 
+---@param components RegexplainerComponent[]
+---@param options    RegexplainerOptions
 function M.get_lines(components, options)
   local clauses = {}
   local lines   = {}
@@ -200,6 +224,8 @@ function M.get_lines(components, options)
   return lines
 end
 
+---@param buffer NuiBuffer
+---@param lines  string[]
 function M.set_lines(buffer, lines)
   vim.api.nvim_win_call(buffer.winid, function()
     vim.lsp.util.stylize_markdown(buffer.bufnr, lines)

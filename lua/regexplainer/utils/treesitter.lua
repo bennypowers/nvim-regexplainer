@@ -112,9 +112,9 @@ function M.is_look_assertion(node)
   return require'regexplainer.component'.is_look_assertion { type = node:type() }
 end
 
--- Using treesitter, find the current node at cursor, and traverse up to the
--- document root to determine if we're on a regexp
--- @returns Node, error message
+--- Using treesitter, find the current node at cursor, and traverse up to the
+--- document root to determine if we're on a regexp
+---@returns any, string
 --
 function M.get_regexp_pattern_at_cursor()
   local cursor_node = ts_utils.get_node_at_cursor()

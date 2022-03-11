@@ -113,12 +113,11 @@ end
 --- Debounces a function on the trailing edge. Automatically
 --- `schedule_wrap()`s.
 ---
---@param fn (function) Function to debounce
---@param timeout (number) Timeout in ms
---@param first (boolean, optional) Whether to use the arguments of the first
----call to `fn` within the timeframe. Default: Use arguments of the last call.
---@returns (function, timer)  Debounced function and timer. Remember to call
----`timer:close()` at the end or you will leak memory!
+---@generic T              # function
+---@param   fn T           # Function to debounce
+---@param   ms number      # Timeout in ms
+---@param   first? boolean # Whether to use the arguments of the first call to `fn` within the timeframe. Default: Use arguments of the last call.
+---@returns T, Timer       # Debounced function and timer. Remember to call `timer:close()` at the end or you will leak memory!
 function M.debounce_trailing(fn, ms, first)
 	td_validate(fn, ms)
 	local timer = vim.loop.new_timer()
