@@ -156,7 +156,8 @@ function M.render(buffer, renderer, options, components)
   local lines = renderer.get_lines(components, options)
 
   local height = #lines
-  if not buffer.mounted then
+
+  if not buffer._.mounted then
     buffer:mount()
   end
 
