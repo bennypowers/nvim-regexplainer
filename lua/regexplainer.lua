@@ -17,7 +17,11 @@ local config_command_map = {
   show       = {'RegexplainerShow',      'Show Regexplainer'},
   hide       = {'RegexplainerHide',      'Hide Regexplainer'},
   toggle     = {'RegexplainerToggle',    'Toggle Regexplainer'},
+  show_split = {'RegexplainerShowSplit', 'Show Regexplainer in a split Window'},
+  ---@deprecated
   showSplit  = {'RegexplainerShowSplit', 'Show Regexplainer in a split Window'},
+  show_popup = {'RegexplainerShowPopup', 'Show Regexplainer in a popup'},
+  ---@deprecated
   showPopup  = {'RegexplainerShowPopup', 'Show Regexplainer in a popup'},
 }
 

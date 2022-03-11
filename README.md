@@ -41,8 +41,8 @@ require'regexplainer'.setup {
     toggle = 'gR',
     -- show = 'gS',
     -- hide = 'gH',
-    -- showSplit = 'gP',
-    -- showPopup = 'gU',
+    -- show_split = 'gP',
+    -- show_popup = 'gU',
   },
 
   narrative = {
