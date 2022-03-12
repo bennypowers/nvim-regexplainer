@@ -49,11 +49,11 @@
 /@(?=g(?:raph)?ql)@/;
 
 /** lookbehind */
-/attack of the killer tomatos(?<=u)@/;
+/(?<=it's the )attack of the killer tomatos/;
 /x(?<!u)@/;
 /x(?<=a|b)y/;
 /x(?<![\w\s])@/;
-/(?<=g(?:raph)?ql)@/;
+/(?<=g(?:raph)?ql)`(.*)`/mg;
 
 /** practical examples */
 /^@scope\/(.*)\.js";?$/;

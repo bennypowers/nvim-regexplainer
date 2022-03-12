@@ -1,8 +1,40 @@
 local ts_utils            = require'nvim-treesitter.ts_utils'
 local node_pred           = require'regexplainer.utils.treesitter'
 
+---@class RegexplainerBaseComponent
+---@field type            RegexplainerComponentType # Which type of component
+---@field text            string                    # full text of this regexp component
+---@field depth           number                    # how many levels deep is this component, where 0 is top-level.
+---@field quantifier?     string                    # a quantified regexp component
+---@field optional?       boolean                   # a regexp component marked with `?`
+---@field zero_or_more?   boolean                   # a regexp component marked with `*`
+---@field one_or_more?    boolean                   # a regexp component marked with `+`
+
+---@class RegexplainerParentComponent               : RegexplainerBaseComponent
+---@field children?       RegexplainerComponent     # Components may contain other components, e.g. capture groups
+
+---@class RegexplainerCaptureGroupComponent         : RegexplainerParentComponent
+---@field group_name?     boolean                   # a regexp component marked with `+`
+---@field capture_group?  number                    # which capture group does this group represent?
+
+---@alias RegexplainerComponentType
+---| "'alternation'"
+---| "'boundary_assertion'"
+---| "'lookahead_assertion'"
+---| "'character_class'"
+---| "'character_class_escape'"
+---| "'class_range'"
+---| "'pattern'"
+---| "'pattern_character'"
+---| "'term'"
+
+---@alias RegexplainerComponent
+---| "RegexplainerBaseComponent"
+---| "RegexplainerCaptureGroupComponent"
+
 local M = {}
 
+---@type RegexplainerComponentType[]
 local component_types = {
   'alternation',
   'boundary_assertion',
@@ -42,9 +74,10 @@ local function get_lookup (xs)
   end
 end
 
--- Memoized `elem` predicate
--- @param x  needle
--- @param xs haystack
+--- Memoized `elem` predicate
+---@generic T
+---@param x  T   needle
+---@param xs T[] haystack
 --
 local function elem(x, xs)
   return get_lookup(xs)[x] or false
@@ -56,6 +89,9 @@ for _, type in ipairs(component_types) do
   end
 end
 
+---@param component RegexplainerComponent
+---@return boolean
+--
 function M.is_control_escape(component)
   return component.type == 'control_escape' or (
     -- `\d` and `\s` are for some reason not considered control escapes by treesitter
@@ -65,17 +101,25 @@ function M.is_control_escape(component)
   )
 end
 
+---@param component RegexplainerComponent
+---@return boolean
+--
 function M.is_identity_escape(component)
   return component.type == 'identity_escape'
       -- `\d` and `\s` are for some reason considered identity escapes by treesitter
      and component.text:gmatch('[ds]') == nil
 end
 
+---@param component RegexplainerComponent
+---@return boolean
+--
 function M.is_look_assertion(component)
   return component.type:find('^look%a+_assertion') ~= nil
 end
 
 -- Does a container component contain nothing by pattern_characters?
+---@param component RegexplainerComponent
+---@return boolean
 --
 function M.is_only_chars(component)
   if component.children then
@@ -88,13 +132,18 @@ function M.is_only_chars(component)
   return true
 end
 
+---@param component RegexplainerComponent
+---@return boolean
+--
 function M.is_capture_group(component)
   local found = component.type:find('capturing_group$')
   return found ~= nil
 end
 
--- A 'simple' component contains no children or modifiers.
--- Used e.g. to concatenate successive unmodified pattern_characters
+--- A 'simple' component contains no children or modifiers.
+--- Used e.g. to concatenate successive unmodified pattern_characters
+---@param component RegexplainerComponent
+---@return boolean
 --
 function M.is_simple_pattern_character(component)
   if not component or M.is_special_character(component) then
@@ -111,13 +160,22 @@ function M.is_simple_pattern_character(component)
   return true
 end
 
+---@param component RegexplainerComponent
+---@return boolean
+--
 function M.is_special_character(component)
   return component.type:find'assertion$'
       or component.type:find'character$'
      and component.type ~= 'pattern_character'
 end
 
--- Transform a treesitter node to a table of components which are easily rendered
+---@alias TreesitterNode any
+
+--- Transform a treesitter node to a table of components which are easily rendered
+---@param node            TreesitterNode
+---@param parent?         TreesitterNode
+---@param root_regex_node TreesitterNode
+---@return RegexplainerComponent[]
 --
 function M.make_components(node, parent, root_regex_node)
   local text = ts_utils.get_node_text(node)[1]
@@ -187,22 +245,23 @@ function M.make_components(node, parent, root_regex_node)
       -- TODO: until treesitter supports lookbehind, we can parse it ourselves
       -- This code, however, is not ready to use
 
-      -- local from_re_start_to_err_start = e_start - re_start + 1
-      --
-      -- local error_term_text = text:sub(from_re_start_to_err_start)
-      --
-      -- local is_lookbehind = error_term_text:find[[^%(%?<!?]]
-      --
-      -- if is_lookbehind ~= nil then
-      --   local is_negative = error_term_text:find[[%(%?<!]]
-      --   table.insert(components, {
-      --     type = 'lookbehind_assertion',
-      --     text = error_term_text,
-      --     negative = is_negative ~= nil,
-      --     depth = (parent and parent.depth or 0) + 1,
-      --     children = M.make_components(child, nil, root_regex_node)
-      --   })
-      -- else
+      local from_re_start_to_err_start = e_start - re_start + 1
+
+      local error_term_text = text:sub(from_re_start_to_err_start)
+
+      local lookbehind = error_term_text:match[[(%(%?<!?(.*)%))]]
+
+      local is_lookbehind = lookbehind ~= nil
+
+      if is_lookbehind then
+        table.insert(components, {
+          type = 'lookbehind_assertion',
+          text = lookbehind,
+          negative = lookbehind:match[[^%(%?<!]] ~= nil ,
+          depth = (parent and parent.depth or 0) + 1,
+          children = M.make_components(child, nil, root_regex_node)
+        })
+      else
         table.insert(components, {
           type = type,
           text = ts_utils.get_node_text(child)[1],
@@ -212,7 +271,7 @@ function M.make_components(node, parent, root_regex_node)
             start_offset = re_start,
           },
         })
-      -- end
+      end
     -- all other node types should be added to the tree
     else
 
@@ -222,12 +281,12 @@ function M.make_components(node, parent, root_regex_node)
       }
 
       -- increment `depth` for each layer of capturing groups encountered
-      if type:find('capturing_group$') then
+      if type:find[[capturing_group$]] then
         component.depth = (parent and parent.depth or 0) + 1
       end
 
       -- negated character class
-      if type == 'character_class' and component.text:find("^%[%^") then
+      if type == 'character_class' and component.text:find[[^%[%^]] then
         component.negative = true
         component.children = M.make_components(child, nil, root_regex_node)
         table.insert(components, component)

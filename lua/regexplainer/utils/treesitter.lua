@@ -82,7 +82,6 @@ end
 --
 function M.is_document(node)
   return node == nil
-      or node:type() == 'ERROR' -- quit early, avoid the headache
       or node:type() == 'program'
       or node:type() == 'document'
       or node:type() == 'source'
@@ -92,6 +91,8 @@ function M.is_document(node)
       -- if we're in an embedded language
       or node:type() == 'stylesheet'
       or node:type() == 'haskell'
+      -- Wha happun?
+      or node:type() == 'ERROR' and not (M.is_pattern(node:parent()) or M.is_term(node:parent()))
 end
 
 function M.is_control_escape(node)
@@ -109,12 +110,18 @@ end
 
 -- Is it a lookahead or lookbehind assertion?
 function M.is_look_assertion(node)
-  return require'regexplainer.component'.is_look_assertion { type = node:type() }
+  ---@see https://github.com/tree-sitter/tree-sitter-regex/issues/13
+  if node:type() == 'ERROR' then
+    local text = ts_utils.get_node_text(node)
+    return text:match [[^%(%<]]
+  else
+    return require'regexplainer.component'.is_look_assertion { type = node:type() }
+  end
 end
 
--- Using treesitter, find the current node at cursor, and traverse up to the
--- document root to determine if we're on a regexp
--- @returns Node, error message
+--- Using treesitter, find the current node at cursor, and traverse up to the
+--- document root to determine if we're on a regexp
+---@returns any, string
 --
 function M.get_regexp_pattern_at_cursor()
   local cursor_node = ts_utils.get_node_at_cursor()

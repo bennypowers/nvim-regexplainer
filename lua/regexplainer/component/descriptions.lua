@@ -4,7 +4,9 @@ local component_pred = require'regexplainer.component'
 
 local M = {}
 
--- Given a quantifier, return a pretty description like "2 or more times"
+--- Given a quantifier, return a pretty description like "2 or more times"
+---@param quantifier_node TreesitterNode
+---@return string
 --
 function M.describe_quantifier(quantifier_node)
   -- TODO: there's probably a better way to do this
@@ -26,7 +28,9 @@ function M.describe_quantifier(quantifier_node)
   end
 end
 
--- Given `[A-Z0-9._%+_]`, return `'A-Z, 0-9, ., _, %, +, or -'`
+--- Given `[A-Z0-9._%+_]`, return `'A-Z, 0-9, ., _, %, +, or -'`
+---@param component RegexplainerComponent
+---@return string
 --
 function M.describe_character_class(component)
   local description = (component.negative and 'Any except ' or 'One of ')
@@ -47,6 +51,8 @@ function M.describe_character_class(component)
   return description
 end
 
+---@param char string
+---@return string
 function M.describe_control_escape(char)
   if     char == 'd' then return '0-9'
   elseif char == 'n' then return 'LF'
@@ -58,6 +64,8 @@ function M.describe_control_escape(char)
   end
 end
 
+---@param component RegexplainerComponent
+---@return string
 function M.describe_character(component)
   local type = component.type
   if     type == 'start_assertion' then return 'START'

@@ -2,9 +2,33 @@ local utils   = require'regexplainer.utils'
 local autocmd = require'nui.utils.autocmd'
 local event   = autocmd.event
 
--- Functions to create or modify the buffer which displays the regexplanation
---
-local M = {}
+---@alias NuiBuffer NuiPopup|NuiSplit
+
+---@class WindowOptions
+---@field wrap         boolean
+---@field conceallevel "0|1|2|3"
+
+---@class BufferOptions
+---@field filetype     string
+---@field readonly     boolean
+---@field modifiable   boolean
+
+---@class NuiSplitBufferOptions: NuiBufferOptions
+---@field relative "'editor'"|"'window'"
+---@field position "'bottom'"|"'top'"
+---@field size     string
+
+---@class NuiBorderOptions
+---@field padding number[]
+---@field style   "'shadow'"|"'double'"
+
+---@class NuiPopupBufferOptions: NuiBufferOptions
+---@field relative "'cursor'"
+---@field position number
+---@field size     number|table<"'width'"|"'height'", number>
+---@field border   NuiBorderOptions
+
+---@alias RegexplainerBufferOptions NuiSplitBufferOptions|NuiPopupBufferOptions
 
 local all_buffers = {}
 
@@ -16,6 +40,12 @@ local last = {
   popup = nil,
 }
 
+---@class NuiBufferOptions
+---@field enter       boolean
+---@field focusable   boolean
+---@field buf_options BufferOptions
+---@field win_options WindowOptions
+--
 local shared_options = {
   enter = false,
   focusable = false,
@@ -30,6 +60,8 @@ local shared_options = {
   },
 }
 
+---@param object NuiBuffer
+---@returns "'NuiSplit'"|"'NuiPopup'"
 local function get_class_name(object)
   local passed, class_name = pcall(function()
     return getmetatable(getmetatable(object).__index).__name
@@ -41,15 +73,40 @@ local function get_class_name(object)
   end
 end
 
+---@param buffer NuiBuffer
 local function is_popup(buffer)
   return get_class_name(buffer) == 'NuiPopup'
 end
 
+---@param buffer NuiBuffer
 local function is_split(buffer)
   return get_class_name(buffer) == 'NuiSplit'
 end
 
--- Get the buffer in which to render the explainer
+---@alias Timer any
+
+---@type Timer
+local last_timer
+
+--- Closes the last timer and replaces it with the new one
+---@param timer Timer
+--
+local function close_last_timer(timer)
+  if last_timer then
+    last_timer:close()
+  end
+  if timer and timer ~= last_timer then
+    last_timer = timer
+  end
+end
+
+-- Functions to create or modify the buffer which displays the regexplanation
+--
+local M = {}
+
+--- Get the buffer in which to render the explainer
+---@param options RegexplainerOptions
+---@return NuiPopup|NuiSplit
 --
 function M.get_buffer(options)
   options = options or {}
@@ -57,7 +114,11 @@ function M.get_buffer(options)
     winnr = vim.api.nvim_get_current_win(),
     bufnr = vim.api.nvim_get_current_buf(),
   }
-  local buffer, default_options
+
+  ---@type NuiBuffer
+  local buffer
+  local default_options
+
   if options.display == 'split' then
     if last.split then
       return last.split
@@ -69,6 +130,7 @@ function M.get_buffer(options)
     })
     buffer = require'nui.split'(vim.tbl_deep_extend('force', shared_options, options.split or {}))
     last.split = buffer
+
   elseif options.display == 'popup' then
     if last.popup then return last.popup end
     default_options = vim.tbl_deep_extend('force', shared_options, {
@@ -89,11 +151,17 @@ function M.get_buffer(options)
   return buffer
 end
 
+---@param buffer NuiBuffer
+---@param renderer RegexplainerRenderer
+---@param options RegexplainerOptions
+---@param components RegexplainerComponent[]
+--
 function M.render(buffer, renderer, options, components)
   local lines = renderer.get_lines(components, options)
 
   local height = #lines
-  if not buffer.mounted then
+
+  if not buffer._.mounted then
     buffer:mount()
   end
 
@@ -139,7 +207,11 @@ function M.render(buffer, renderer, options, components)
   end)
 end
 
-M.kill_buffer = function(buffer)
+--- Close and unload a buffer
+---@param buffer NuiBuffer
+--
+function M.kill_buffer(buffer)
+  -- pcall(close_last_timer)
   if buffer then
     pcall(function () buffer:hide() end)
     pcall(function () buffer:unmount() end)
@@ -157,12 +229,16 @@ M.kill_buffer = function(buffer)
   end
 end
 
-M.hide_last = function ()
+--- Hide the last-opened Regexplainer buffer
+--
+function M.hide_last()
   M.kill_buffer(last.popup)
   M.kill_buffer(last.split)
 end
 
-M.hide_all = function ()
+--- Hide all known Regexplainer buffers
+--
+function M.hide_all()
   for _, buffer in ipairs(all_buffers) do
     M.kill_buffer(buffer)
     last.parent = nil
@@ -171,13 +247,27 @@ M.hide_all = function ()
   end
 end
 
-M.debug_buffers = function()
+--- Notify regarding all known Regexplainer buffers
+--- **INTERNAL**: for debug purposes only
+--
+function M.debug_buffers()
   utils.notify(all_buffers)
   utils.notify(last)
 end
 
-M.is_open = function ()
+--- Whether there are any open Regexplainer buffers
+---@return boolean
+--
+function M.is_open()
   return #all_buffers > 0
+end
+
+--- **INTERNAL** Register a debounce timer,
+--- so that we can close it to prevent memory leaks when closing buffers
+---@param timer Timer
+--
+function M.register_timer(timer)
+  pcall(close_last_timer, timer)
 end
 
 return M

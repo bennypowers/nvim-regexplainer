@@ -6,7 +6,13 @@ local utils                  = require'regexplainer.utils'
 --
 local M = {}
 
--- get a suffix describing the component's quantifier, optionality, etc
+---@class RegexplainerNarrativeRendererOptions
+---@field depth number # internal tracker for component depth
+---@field separator string|fun(component: Component): string # clause separator
+
+--- Get a suffix describing the component's quantifier, optionality, etc
+---@param component RegexplainerComponent
+---@return string
 --
 local function get_suffix(component)
   local suffix = ''
@@ -26,6 +32,10 @@ local function get_suffix(component)
   return suffix
 end
 
+--- Get a title for a group component
+---@param component RegexplainerComponent
+---@return string
+--
 local function get_group_heading(component)
   local name = component.group_name and ('`'..component.group_name..'`') or ''
 
@@ -34,6 +44,11 @@ local function get_group_heading(component)
        or 'capture group '.. component.capture_group):gsub(' $', '')
 end
 
+--- Get all lines for a recursive component's children
+---@param component RegexplainerComponent
+---@param options   RegexplainerOptions
+---@return string[]
+--
 local function get_sublines(component, options)
   local depth = (options.narrative.depth or 0) + 1
   local sep = '\n' for _ = 0, depth do sep = sep .. ' ' end
@@ -55,9 +70,16 @@ local function get_sublines(component, options)
   })
 
   return M.get_lines(children, next_options), sep
-
 end
 
+--- Get a narrative clause for a component and all it's children
+--- i.e. a single top-level narrative unit
+---@param component RegexplainerComponent
+---@param options   RegexplainerOptions
+---@param first     boolean
+---@param last      boolean
+---@return string
+--
 local function get_narrative_clause(component, options, first, last)
   local prefix = ''
   local infix = ''
@@ -108,6 +130,11 @@ local function get_narrative_clause(component, options, first, last)
   end
 
   if component_pred.is_look_assertion(component) then
+    if component.type == 'lookbehind_assertion' then
+      ---@diagnostic disable-next-line: undefined-field
+      options.__lookbehind_found = true
+    end
+
     local negation = component.negative and 'NOT ' or ''
     local direction = component_pred.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
     prefix = '**' .. negation .. direction .. ' ' .. '**'
@@ -153,6 +180,8 @@ local function get_narrative_clause(component, options, first, last)
   return prefix .. infix .. suffix
 end
 
+---@param components RegexplainerComponent[]
+---@param options    RegexplainerOptions
 function M.get_lines(components, options)
   local clauses = {}
   local lines   = {}
@@ -197,9 +226,18 @@ function M.get_lines(components, options)
     end
   end
 
+  ---@diagnostic disable-next-line: undefined-field
+  if not options.narrative.depth and options.__lookbehind_found then
+      table.insert(lines, 1, '⚠️ **Lookbehinds are poorly supported**')
+      table.insert(lines, 2, '⚠️ results may not be accurate')
+      table.insert(lines, 3, '⚠️ See https://github.com/tree-sitter/tree-sitter-regex/issues/13')
+      table.insert(lines, 4, '')
+  end
   return lines
 end
 
+---@param buffer NuiBuffer
+---@param lines  string[]
 function M.set_lines(buffer, lines)
   vim.api.nvim_win_call(buffer.winid, function()
     vim.lsp.util.stylize_markdown(buffer.bufnr, lines)
