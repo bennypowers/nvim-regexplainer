@@ -70,9 +70,8 @@ Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`.
 `RegexplainerHide` and `RegexplainerToggle` are also available.
 
 You can customize the popup window by specifying `options.popup.border`,
-which is a table of [popup options from nui](https://github.com/MunifTanjim/nui.nvim/tree/main/lua/nui/popup#border)
-Currently, only `border` is supported, and any options specified override the defaults,
-they are not merged with the default values.
+which is a table of [popup options from nui](https://github.com/MunifTanjim/nui.nvim/tree/main/lua/nui/popup#border).
+Any options specified for `options.popup` will also override the defaults.
 
 ```lua
 require'regexplainer'.show {
