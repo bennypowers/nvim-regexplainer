@@ -89,7 +89,7 @@ local function show(options)
     options.full_regexp_text = ts_utils.get_node_text(node)[1]
 
     local buffer = buffers.get_buffer(options)
-
+    
     if not buffer and options.debug then
       utils.notify('' .. options.full_regexp_text .. '\n\nCOMPONENTS:\n' .. vim.inspect(components))
       return

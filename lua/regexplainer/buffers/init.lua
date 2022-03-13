@@ -60,6 +60,24 @@ local shared_options = {
   },
 }
 
+---@type NuiSplitBufferOptions
+local split_defaults = {
+  relative = 'editor',
+  position = 'bottom',
+  size = '20%',
+}
+
+---@type NuiPopupBufferOptions
+local popup_defaults = {
+  position = 1,
+  relative = 'cursor',
+  size = 1,
+  border = {
+    padding = { 1, 2 },
+    style = 'shadow',
+  },
+}
+
 ---@param object NuiBuffer
 ---@returns "'NuiSplit'"|"'NuiPopup'"
 local function get_class_name(object)
@@ -110,43 +128,31 @@ local M = {}
 --
 function M.get_buffer(options)
   options = options or {}
-  last.parent = {
-    winnr = vim.api.nvim_get_current_win(),
-    bufnr = vim.api.nvim_get_current_buf(),
-  }
 
   ---@type NuiBuffer
   local buffer
-  local default_options
 
   if options.display == 'split' then
-    if last.split then
-      return last.split
-    end
-    default_options = vim.tbl_deep_extend('force', shared_options, {
-      relative = 'editor',
-      position = 'bottom',
-      size = '20%',
-    })
-    buffer = require'nui.split'(vim.tbl_deep_extend('force', shared_options, options.split or {}))
+    if last.split then return last.split end
+    local Split = require'nui.split'
+    local buffer_options = vim.tbl_deep_extend('force', shared_options, split_defaults, options.split or {})
+    buffer = Split(buffer_options)
     last.split = buffer
 
   elseif options.display == 'popup' then
     if last.popup then return last.popup end
-    default_options = vim.tbl_deep_extend('force', shared_options, {
-      position = 1,
-      relative = 'cursor',
-      size = 1,
-      border = {
-        padding = { 1, 2 },
-        style = 'shadow',
-      },
-    })
-    buffer = require'nui.popup'(vim.tbl_deep_extend('force', default_options, options.popup or {}))
+    local Popup = require'nui.popup'
+    local buffer_options = vim.tbl_deep_extend('force', shared_options, popup_defaults, options.popup or {})
+    buffer = Popup(buffer_options)
     last.popup = buffer
   end
 
   table.insert(all_buffers, buffer);
+
+  last.parent = {
+    winnr = vim.api.nvim_get_current_win(),
+    bufnr = vim.api.nvim_get_current_buf(),
+  }
 
   return buffer
 end
@@ -223,7 +229,6 @@ function M.kill_buffer(buffer)
     for _, key in ipairs({ 'popup', 'split' }) do
       if last[key] == buffer then
         last[key] = nil
-        last.parent = nil
       end
     end
   end
@@ -241,7 +246,6 @@ end
 function M.hide_all()
   for _, buffer in ipairs(all_buffers) do
     M.kill_buffer(buffer)
-    last.parent = nil
     last.split = nil
     last.popup = nil
   end
