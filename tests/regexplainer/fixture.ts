@@ -40,6 +40,7 @@
 /one|two|three/;
 /(one|two|three)/;
 /zero|bupkis|gornisht|(one|two|three|(four|five))/;
+/"(http|(cs)s)";?/;
 
 /** lookahead */
 /@(?=u)@/;

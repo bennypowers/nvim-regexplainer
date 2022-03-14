@@ -56,7 +56,7 @@ local function get_sublines(component, options)
   end
 
   local children = component.children
-  while (#children == 1 and (component_pred.is_term(children[1])
+  while (#children == 1 and (   component_pred.is_term(children[1])
                              or component_pred.is_pattern(children[1]))) do
     children = children[1].children
   end
@@ -105,11 +105,13 @@ local function get_narrative_clause(component, options, first, last)
     end
   end
 
-  if component_pred.is_term(component) and component_pred.is_only_chars(component) then
-    infix = '`' .. component.text .. '`'
-  else
-    while (component_pred.is_pattern(component) or component_pred.is_term(component)) do
-      component = component.children[1]
+  if component_pred.is_term(component) or component_pred.is_pattern(component) then
+    if component_pred.is_only_chars(component) then
+      infix = '`' .. component.text .. '`'
+    else
+      for _, child in ipairs(component.children) do
+        infix = infix .. get_narrative_clause(child, options)
+      end
     end
   end
 
@@ -127,27 +129,6 @@ local function get_narrative_clause(component, options, first, last)
     local char = component.text:sub(2)
     local desc = descriptions.describe_escape(char) or char
     infix = '**' .. desc .. '**'
-  end
-
-  if component_pred.is_look_assertion(component) then
-    if component.type == 'lookbehind_assertion' then
-      ---@diagnostic disable-next-line: undefined-field
-      options.__lookbehind_found = true
-    end
-
-    local negation = component.negative and 'NOT ' or ''
-    local direction = component_pred.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
-    prefix = '**' .. negation .. direction .. ' ' .. '**'
-
-    local sublines, sep = get_sublines(component, options)
-    local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
-
-    infix =
-         get_suffix(component)
-      .. ':'
-      .. sep
-      .. contents
-      .. '\n'
   end
 
   if component_pred.is_boundary_assertion(component) then
@@ -170,6 +151,27 @@ local function get_narrative_clause(component, options, first, last)
       .. contents
       .. '\n'
 
+  end
+
+  if component_pred.is_look_assertion(component) then
+    if component.type == 'lookbehind_assertion' then
+      ---@diagnostic disable-next-line: undefined-field
+      options.__lookbehind_found = true
+    end
+
+    local negation = component.negative and 'NOT ' or ''
+    local direction = component_pred.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
+    prefix = '**' .. negation .. direction .. ' ' .. '**'
+
+    local sublines, sep = get_sublines(component, options)
+    local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
+
+    infix =
+         get_suffix(component)
+      .. ':'
+      .. sep
+      .. contents
+      .. '\n'
   end
 
   if not component_pred.is_capture_group(component)
