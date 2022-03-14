@@ -89,10 +89,9 @@ local function show(options)
     options.full_regexp_text = ts_utils.get_node_text(node)[1]
 
     local buffer = buffers.get_buffer(options)
-    
+
     if not buffer and options.debug then
-      utils.notify('' .. options.full_regexp_text .. '\n\nCOMPONENTS:\n' .. vim.inspect(components))
-      return
+      return require'regeplainer.renderers.debug'.render(options, components)
     end
 
     buffers.render(buffer, renderer, options, components)
@@ -104,7 +103,7 @@ end
 local defer = require'regexplainer.utils.defer'
 
 local debounced_show, timer = defer.debounce_trailing(function(config)
-  return show(vim.tbl_deep_extend('keep', config or {}, local_config))
+  return show(vim.tbl_deep_extend('force', local_config, config or {}))
 end, 5)
 
 local M = {}
@@ -147,6 +146,12 @@ function M.setup(config)
       augroup END
     ]]
   end
+end
+
+--- **INTERNAL** notify the component tree for the current regexp
+--
+function M.debug_components()
+  show({ auto = false, display = 'split', mode = 'debug' })
 end
 
 --- Hide any displayed regexplainer buffers
