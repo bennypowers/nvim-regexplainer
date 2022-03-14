@@ -39,6 +39,8 @@ local component_types = {
   'alternation',
   'boundary_assertion',
   'lookahead_assertion',
+  'identity_escape',
+  'control_escape',
   'character_class',
   'character_class_escape',
   'class_range',
@@ -92,22 +94,8 @@ end
 ---@param component RegexplainerComponent
 ---@return boolean
 --
-function M.is_control_escape(component)
-  return component.type == 'control_escape' or (
-    -- `\d` and `\s` are for some reason not considered control escapes by treesitter
-    component.type == 'character_class_escape' and (
-      component.text:gmatch('[ds]') ~= nil
-    )
-  )
-end
-
----@param component RegexplainerComponent
----@return boolean
---
-function M.is_identity_escape(component)
-  return component.type == 'identity_escape'
-      -- `\d` and `\s` are for some reason considered identity escapes by treesitter
-     and component.text:gmatch('[ds]') == nil
+function M.is_escape(component)
+  return component.type == 'boundary_assertion' or component.type:match'escape$'
 end
 
 ---@param component RegexplainerComponent

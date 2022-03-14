@@ -40,8 +40,8 @@ function M.describe_character_class(component)
     local initial_sep = i == 1 and '' or ', '
     local text = utils.escape_markdown(child.text)
 
-    if component_pred.is_control_escape(child) then
-      text = '**' .. M.describe_control_escape(text:gsub([[\\]], [[\]]):sub(2)) .. '**'
+    if component_pred.is_escape(child) then
+      text = '**' .. M.describe_escape(text:gsub([[\\]], [[\]]):sub(2)) .. '**'
     else
       text = '`' .. text .. '`'
     end
@@ -53,11 +53,12 @@ end
 
 ---@param char string
 ---@return string
-function M.describe_control_escape(char)
+function M.describe_escape(char)
   if     char == 'd' then return '0-9'
   elseif char == 'n' then return 'LF'
   elseif char == 'r' then return 'CR'
   elseif char == 's' then return 'WS'
+  elseif char == 'b' then return 'WB'
   elseif char == 't' then return 'TAB'
   elseif char == 'w' then return 'WORD'
   else                    return char

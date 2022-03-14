@@ -2,8 +2,6 @@ local descriptions           = require'regexplainer.component.descriptions'
 local component_pred         = require'regexplainer.component'
 local utils                  = require'regexplainer.utils'
 
--- A textual, narrative renderer which describes a regexp in terse prose
---
 local M = {}
 
 ---@class RegexplainerNarrativeRendererOptions
@@ -69,7 +67,7 @@ local function get_sublines(component, options)
     },
   })
 
-  return M.get_lines(children, next_options), sep
+  return M.recurse(children, next_options), sep
 end
 
 --- Get a narrative clause for a component and all it's children
@@ -121,11 +119,13 @@ local function get_narrative_clause(component, options, first, last)
 
   if component_pred.is_identity_escape(component) then
     infix = '`' .. component.text:sub(2) .. '`'
+
   elseif component_pred.is_special_character(component) then
     infix = '**' .. utils.escape_markdown(descriptions.describe_character(component)) .. '**'
-  elseif component_pred.is_control_escape(component) then
+
+  elseif component_pred.is_escape(component) then
     local char = component.text:sub(2)
-    local desc = descriptions.describe_control_escape(char) or char
+    local desc = descriptions.describe_escape(char) or char
     infix = '**' .. desc .. '**'
   end
 
@@ -180,9 +180,7 @@ local function get_narrative_clause(component, options, first, last)
   return prefix .. infix .. suffix
 end
 
----@param components RegexplainerComponent[]
----@param options    RegexplainerOptions
-function M.get_lines(components, options)
+function M.recurse(components, options)
   local clauses = {}
   local lines   = {}
 
@@ -201,10 +199,12 @@ function M.get_lines(components, options)
       lines[3] = lines[3] .. '^'
       return lines
     end
+
     local next_clause = get_narrative_clause(component,
                                              options,
                                              first,
                                              last)
+
     if component_pred.is_lookahead_assertion(component) then
       clauses[#clauses] = clauses[#clauses] .. ' ' .. next_clause
     else
@@ -233,15 +233,6 @@ function M.get_lines(components, options)
       table.insert(lines, 3, '⚠️ See https://github.com/tree-sitter/tree-sitter-regex/issues/13')
       table.insert(lines, 4, '')
   end
-  return lines
-end
-
----@param buffer NuiBuffer
----@param lines  string[]
-function M.set_lines(buffer, lines)
-  vim.api.nvim_win_call(buffer.winid, function()
-    vim.lsp.util.stylize_markdown(buffer.bufnr, lines)
-  end)
   return lines
 end
 

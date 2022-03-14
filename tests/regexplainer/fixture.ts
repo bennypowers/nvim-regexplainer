@@ -58,6 +58,7 @@
 /** practical examples */
 /^@scope\/(.*)\.js";?$/;
 /@scope\/(.*)\.(?<extension>graphql|(?:t|j|cs)s)";?/;
+/(?:g(?:raph)?ql)`(.*)`/mg;
 
 /** errors */
 /@scope\/(.*)\.{graphql,js,ts,css}/;
