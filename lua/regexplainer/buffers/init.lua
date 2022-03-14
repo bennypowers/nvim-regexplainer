@@ -188,13 +188,15 @@ function M.render(buffer, renderer, options, components)
 
     buffer:set_size { width = width, height = height }
 
-    buffer:on({
-      event.BufLeave,
-      event.BufWinLeave,
-      event.CursorMoved,
-    }, function ()
-      M.kill_buffer(buffer)
-    end, { once = true })
+    if options.auto then
+      buffer:on({
+        event.BufLeave,
+        event.BufWinLeave,
+        event.CursorMoved
+      }, function ()
+        M.kill_buffer(buffer)
+      end, { once = true })
+    end
   end
 
   renderer.set_lines(buffer, lines)
@@ -205,12 +207,14 @@ function M.render(buffer, renderer, options, components)
     vim.api.nvim_win_set_height(buffer.winid, height)
   end
 
-  autocmd.buf.define(last.parent.bufnr, {
-    event.BufHidden,
-    event.BufLeave,
-  }, function ()
-    M.kill_buffer(buffer)
-  end)
+  if options.auto then
+    autocmd.buf.define(last.parent.bufnr, {
+      event.BufHidden,
+      event.BufLeave,
+    }, function ()
+      M.kill_buffer(buffer)
+    end)
+  end
 end
 
 --- Close and unload a buffer
