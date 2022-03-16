@@ -1,11 +1,17 @@
-.PHONY: test prepare
+.PHONY: prepare test watch
 
-prepare:
+clean:
+	rm -rf vendor/plenary.nvim
+
+prepare: clean
 	@git clone https://github.com/nvim-lua/plenary.nvim vendor/plenary.nvim
 
-test: prepare
-	@nvim \
+test:
+	@REGEXPLAINER_DEBOUNCE=false nvim \
 		--headless \
-		--noplugin \
-		-u tests/minimal_vim.vim \
-		-c "PlenaryBustedDirectory tests/ { minimal_init = 'tests/minimal_vim.vim' }"
+		-u tests/mininit.lua \
+		-c "PlenaryBustedDirectory tests/regexplainer { minimal_init = 'tests/mininit.lua' }"
+
+watch: prepare
+	@echo "Testing..."
+	@find . -type f -name '*.lua' ! -path "./vendor/**/*" | entr -d make test

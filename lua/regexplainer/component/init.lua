@@ -190,12 +190,19 @@ function M.make_components(node, parent, root_regex_node)
     local function append_previous(props)
       if M.is_simple_pattern_character(previous) and #previous.text > 1 then
         local last_char = previous.text:sub(-1)
-        previous.text = previous.text:sub(1, -2)
-        previous.type = 'pattern_character'
-        table.insert(components, { type = 'pattern_character', text = last_char })
-        previous = components[#components]
+
+        if M.is_identity_escape(previous) then
+          previous.text = previous.text .. last_char
+        else
+          previous.text = previous.text:sub(1, -2)
+          previous.type = 'pattern_character'
+          table.insert(components, { type = 'pattern_character', text = last_char })
+          previous = components[#components]
+        end
       end
+
       components[#components] = vim.tbl_deep_extend('force', previous, props)
+
       return previous
     end
 
@@ -216,7 +223,11 @@ function M.make_components(node, parent, root_regex_node)
     elseif type == 'identity_escape'
            and not node_pred.is_control_escape(child)
            and M.is_simple_pattern_character(previous) then
-      previous.text = previous.text .. ts_utils.get_node_text(child)[1]:sub(1, -1)
+      if node_type ~= 'character_class' then
+        previous.text = previous.text .. ts_utils.get_node_text(child)[1]:sub(-1)
+      else
+        table.insert(components, { type = type, text = ts_utils.get_node_text(child)[1] })
+      end
 
     elseif type == 'start_assertion' then
       table.insert(components, { type = type, text = '^' })
@@ -314,6 +325,13 @@ function M.make_components(node, parent, root_regex_node)
 
           -- once state has been set above, process the children
           component.children = M.make_components(child, component, root_regex_node)
+
+          -- FIXME: find the root cause of this weird case
+          if    #component.children == 1
+            and component.capture_group ~= nil
+            and component.capture_group == component.children[1].capture_group then
+              component = component.children[1]
+          end
         end
 
         -- hack to handle top-level alternations as well as nested

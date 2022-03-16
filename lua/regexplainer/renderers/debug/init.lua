@@ -1,7 +1,7 @@
 --- A debug renderer that outputs the component tree
 ---@type RegexplainerRenderer
 --
-local M = { }
+local M = {}
 
 ---@param buffer NuiBuffer
 ---@param lines  string[]
@@ -16,11 +16,11 @@ end
 ---@param components RegexplainerComponent[]
 ---@param options    RegexplainerOptions
 ---@return string[]
-function M.get_lines(components, options)
+function M.get_lines(components, options, state)
   local lines = {}
   local text =
        'local regexp_string = [['
-    .. options.full_regexp_text
+    .. state.full_regexp_text
     .. ']]\n'
     .. 'local components = '
     .. vim.inspect(components)

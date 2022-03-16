@@ -20,6 +20,11 @@ function M.notify(value, level)
   return vim.notify(vim.inspect(value), level)
 end
 
+-- For debugging
+function M.debug(...)
+  vim.notify(table.concat(vim.tbl_map(vim.inspect, { ... }), '\n'))
+end
+
 -- Escape markdown syntax in a given string
 --
 function M.escape_markdown(str)

@@ -27,7 +27,8 @@ local node_types = {
 
 for _, type in ipairs(node_types) do
   M['is_'..type] = function (node)
-    return node:type() == type
+    if not node then return false end
+    return node and node:type() == type
   end
 end
 

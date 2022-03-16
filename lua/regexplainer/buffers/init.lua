@@ -158,12 +158,13 @@ function M.get_buffer(options)
 end
 
 ---@param buffer NuiBuffer
----@param renderer RegexplainerRenderer
----@param options RegexplainerOptions
+---@param renderer   RegexplainerRenderer
+---@param options    RegexplainerOptions
 ---@param components RegexplainerComponent[]
+---@param state      RegexplainerRendererState
 --
-function M.render(buffer, renderer, options, components)
-  local lines = renderer.get_lines(components, options)
+function M.render(buffer, renderer, options, components, state)
+  local lines = renderer.get_lines(components, options, state)
 
   local height = #lines
 
@@ -257,10 +258,19 @@ end
 
 --- Notify regarding all known Regexplainer buffers
 --- **INTERNAL**: for debug purposes only
+---@private
 --
 function M.debug_buffers()
   utils.notify(all_buffers)
   utils.notify(last)
+end
+
+--- get all active regexplaine buffers
+--- **INTERNAL**: for debug purposes only
+---@private
+--
+function M.get_buffers()
+  return all_buffers
 end
 
 --- Whether there are any open Regexplainer buffers
@@ -276,6 +286,12 @@ end
 --
 function M.register_timer(timer)
   pcall(close_last_timer, timer)
+end
+
+--- **INTERNAL** clear timers
+--
+function M.clear_timers()
+  pcall(close_last_timer)
 end
 
 return M

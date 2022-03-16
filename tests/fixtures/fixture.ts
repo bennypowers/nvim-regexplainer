@@ -3,6 +3,7 @@
 
 /** modifiers and escape chars */
 /hello!?/; 
+/hello\./;
 /hello\.?/;
 
 /** special characters */
@@ -13,23 +14,27 @@
 /@hello[a-z]/;
 /a{1}b{2,}c{3,5}d*e+/g;
 /\b[a-z0-9._%+-]+@hello[a-z0-9.-]+\.[a-z]{2,}\b/;
-/[\w\b\d\s\t\n\r]/;
+/[\b\w\d\s\t\n\r]/;
 /^[a-zA-Z0-9]{6,12}$/;
+/[-\w.]/;
+/[\w,.]/;
+/[\w\-.]/;
+/[.\-\w]/;
 
 /** Negated range */
 /^p[^p^a]*p/;
 
 /** capture group */
-/(hello)/;
-/(hello)(world)/;
+/@(hello)/;
+/@(hello)(world)/;
 /zero(one(two(three)))/;
-/(\w\d\s\t\n\r)/g;
-/(a1\d)/g;
+/@(\b\w\d\s\t\n\r)/g;
+/@(a1\d)/g;
 
 /** named capture group */
 /(hello)?(?<hello>world)+(?:one){2,3}/;
 /([a-za-z]{2,5})a-?(?<hello>world){4,5}/g;
-/([a-za-z]{2,5})-?(?<dolly>\w\d\s\t\n\r)/g;
+/([a-za-z]{2,5})-?(?<dolly>\b\w\d\s\t\n\r)/g;
 
 /** non capturing group */
 /hello(?:world|dolly)/;

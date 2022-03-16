@@ -1,0 +1,49 @@
+<input type="tel" pattern="[0-9]{3}"/>
+
+<input pattern="[0-9]?"></input>
+<input pattern=[0-9]? type="tel"></input>
+
+<script>console.log('should parse as js')</script>
+<script async defer>console.log('works')</script>
+
+<script type="text/markdown">
+## Hello `world`
+
+**Who likes markdown?**
+</script>
+
+<script type="application/graphql">
+query SomethingFromNothing(last: "button") {
+  result { 
+    story
+  }
+}
+</script>
+
+<script type="application/json">
+{ "json": "for fun and profit" }
+</script>
+
+<script>
+class Thingy extends LitElement {
+  static styles = css` :host { display: none; } `;
+  render() { return html`<input type="tel" pattern="[0-9]{3}"/> `; }
+}
+</script>
+
+<script type="application/ecmascript">
+const hello = name => html`<blink>hello ${name}</blink>`
+const query = sql`SELECT * from table WHERE name is 'boo'`
+</script>
+
+<script type="application/javascript">
+const hello = name => html`<blink>hello ${name}</blink>`
+</script>
+
+<script type="text/ecmascript">
+const hello = name => html`<blink>hello ${name}</blink>`
+</script>
+
+<script type="text/javascript">
+const hello = name => html`<blink>hello ${name}</blink>`
+</script>

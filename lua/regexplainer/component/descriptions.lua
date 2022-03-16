@@ -40,7 +40,9 @@ function M.describe_character_class(component)
     local initial_sep = i == 1 and '' or ', '
     local text = utils.escape_markdown(child.text)
 
-    if component_pred.is_escape(child) then
+    if component_pred.is_identity_escape(child) then
+      text = '`' .. text:sub(-1) .. '`'
+    elseif component_pred.is_escape(child) then
       text = '**' .. M.describe_escape(text:gsub([[\\]], [[\]]):sub(2)) .. '**'
     else
       text = '`' .. text .. '`'
