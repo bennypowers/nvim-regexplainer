@@ -34,11 +34,12 @@ jobs:
           repository: MunifTanjim/nui.nvim
           path: vendor/nui.nvim
 
+      - name: Install Neovim
       - uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: ${{ matrix.nvim-versions }}
 
-      - name: run tests
+      - name: Test
         run: make ci
 

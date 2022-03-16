@@ -21,5 +21,5 @@ watch: prepare
 	@find . -type f -name '*.lua' ! -path "./vendor/**/*" | entr -d make test
 
 ci:
-	@nvim --noplugin -u tests/minimal_init.vim -c "TSUpdateSync org" -c "qa!"
+	@nvim --noplugin -u tests/mininit.lua -c "TSUpdateSync org" -c "qa!"
 	@make test
