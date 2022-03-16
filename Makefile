@@ -1,14 +1,9 @@
-.PHONY: prepare test watch ci
-
 clean:
 	@rm -rf vendor/plenary.nvim
 	@rm -rf vendor/nvim-treesitter
 	@rm -rf vendor/nui.nvim
 
-prepare: clean
-	@git clone https://github.com/nvim-lua/plenary.nvim           vendor/plenary.nvim
-	@git clone https://github.com/nvim-treesitter/nvim-treesitter vendor/nvim-treesitter
-	@git clone https://github.com/MunifTanjim/nui.nvim/           vendor/nui.nvim
+.PHONY: prepare test watch ci
 
 test:
 	@REGEXPLAINER_DEBOUNCE=false nvim \
