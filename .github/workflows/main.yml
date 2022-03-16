@@ -16,23 +16,11 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: Install Plenary
-        uses: actions/checkout@v2
-        with:
-          repository: nvim-lua/plenary.nvim
-          path: ../../../.local/share/nvim/site/pack/vendor/start/plenary.nvim
-
-      - name: Install Treesitter
-        uses: actions/checkout@v2
-        with:
-          repository: nvim-treesitter/nvim-treesitter
-          path: ../../../.local/share/nvim/site/pack/vendor/start/nvim-treesitter.nvim
-
-      - name: Install nui
-        uses: actions/checkout@v2
-        with:
-          repository: MunifTanjim/nui.nvim
-          path: ../../../.local/share/nvim/site/pack/vendor/start/nui.nvim
+      - name: Install Packages
+        run: |
+          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim           ~/.local/share/nvim/site/pack/vendor/start/plenary.nvim
+          git clone --depth 1 https://github.com/MunifTanjim/nui.nvim            ~/.local/share/nvim/site/pack/vendor/start/nui.nvim
+          git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter ~/.local/share/nvim/site/pack/vendor/start/nvim-treesitter.nvim
 
       - name: Install Neovim
         uses: rhysd/action-setup-vim@v1
