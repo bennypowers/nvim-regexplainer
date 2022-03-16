@@ -4,6 +4,7 @@ function P(...)
 end
 
 vim.cmd([[
+  set rtp+=.
   set noswapfile
   filetype on
   packloadall
