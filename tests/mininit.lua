@@ -5,18 +5,17 @@ vim.opt.rtp = {
   vim.env.VIMRUNTIME,
 }
 
+vim.opt.swapfile = false
+
 vim.cmd([[
   filetype on
   packadd plenary.nvim
   packadd nui.nvim
   packadd nvim-treesitter
-]])
-
-vim.opt.swapfile = false
-
-vim.cmd([[
   runtime plugin/regexplainer.vim
 ]])
+
+require'nvim-treesitter.configs'.setup {}
 
 -- For debugging
 function P(...)

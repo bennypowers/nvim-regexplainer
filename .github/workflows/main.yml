@@ -16,10 +16,29 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: Install Plenary
+        uses: actions/checkout@v2
+        with:
+          repository: nvim-lua/plenary.nvim
+          path: vendor/plenary.nvim
+
+      - name: Install Treesitter
+        uses: actions/checkout@v2
+        with:
+          repository: nvim-treesitter/nvim-treesitter
+          path: vendor/nvim-treesitter
+
+      - name: Install nui
+        uses: actions/checkout@v2
+        with:
+          repository: MunifTanjim/nui.nvim
+          path: vendor/nui.nvim
+
       - uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: ${{ matrix.nvim-versions }}
 
       - name: run tests
-        run: make test
+        run: make ci
+
