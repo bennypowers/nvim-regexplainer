@@ -35,7 +35,7 @@ jobs:
           path: vendor/nui.nvim
 
       - name: Install Neovim
-      - uses: rhysd/action-setup-vim@v1
+        uses: rhysd/action-setup-vim@v1
         with:
           neovim: true
           version: ${{ matrix.nvim-versions }}
