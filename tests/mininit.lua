@@ -3,19 +3,19 @@
 vim.opt.rtp = {
   vim.fn.fnamemodify(vim.trim(vim.fn.system("git rev-parse --show-toplevel")), ":p"),
   vim.env.VIMRUNTIME,
-  './vendor/plenary.nvim',
-  './vendor/nvim-treesitter',
-  './vendor/nui.nvim',
+  vim.fn.expand('./vendor/plenary.nvim'),
+  vim.fn.expand('./vendor/nvim-treesitter'),
+  vim.fn.expand('./vendor/nui.nvim'),
 }
 
 vim.opt.swapfile = false
 
 vim.cmd([[
   filetype on
-  packadd plenary.nvim
-  packadd nui.nvim
-  packadd nvim-treesitter
   runtime plugin/regexplainer.vim
+  runtime vendor/plenary.nvim
+  runtime vendor/nui.nvim
+  runtime vendor/nvim-treesitter
 ]])
 
 require'nvim-treesitter.configs'.setup {}
@@ -24,4 +24,5 @@ require'nvim-treesitter.configs'.setup {}
 function P(...)
   print(unpack(vim.tbl_map(vim.inspect, { ... })))
 end
+
 
