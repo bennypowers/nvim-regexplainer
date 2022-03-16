@@ -16,5 +16,5 @@ watch: prepare
 	@find . -type f -name '*.lua' ! -path "./vendor/**/*" | entr -d make test
 
 ci:
-	@nvim --noplugin -u tests/mininit.lua -c "TSUpdateSync org" -c "qa!"
+	@nvim --noplugin -u tests/mininit.lua -c "TSUpdateSync typescript regex" -c "qa!"
 	@make test

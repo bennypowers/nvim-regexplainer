@@ -6,6 +6,7 @@ end
 vim.cmd([[
   set noswapfile
   filetype on
+  packloadall
   runtime plugin/regexplainer.vim
 ]])
 
