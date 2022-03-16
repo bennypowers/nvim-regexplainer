@@ -3,6 +3,9 @@
 vim.opt.rtp = {
   vim.fn.fnamemodify(vim.trim(vim.fn.system("git rev-parse --show-toplevel")), ":p"),
   vim.env.VIMRUNTIME,
+  './vendor/plenary.nvim',
+  './vendor/nvim-treesitter',
+  './vendor/nui.nvim',
 }
 
 vim.opt.swapfile = false
