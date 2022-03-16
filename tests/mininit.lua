@@ -5,10 +5,6 @@ end
 
 vim.cmd([[
   set noswapfile
-  set rtp+=.
-  set rtp+=./vendor/plenary.nvim
-  set rtp+=./vendor/nvim-treesitter
-  set rtp+=./vendor/nui.nvim
   filetype on
   packadd plenary.nvim
   packadd nui.nvim
