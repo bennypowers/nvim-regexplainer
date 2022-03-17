@@ -39,6 +39,7 @@ local component_types = {
   'alternation',
   'boundary_assertion',
   'lookahead_assertion',
+  'decimal_escape',
   'identity_escape',
   'control_escape',
   'character_class',
@@ -193,7 +194,7 @@ function M.make_components(node, parent, root_regex_node)
 
         if M.is_identity_escape(previous) then
           previous.text = previous.text .. last_char
-        else
+        elseif not M.is_control_escape(previous) and not M.is_character_class_escape(previous) then
           previous.text = previous.text:sub(1, -2)
           previous.type = 'pattern_character'
           table.insert(components, { type = 'pattern_character', text = last_char })

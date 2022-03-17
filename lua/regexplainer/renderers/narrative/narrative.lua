@@ -1,5 +1,5 @@
 local descriptions           = require'regexplainer.component.descriptions'
-local component_pred         = require'regexplainer.component'
+local comp                   = require'regexplainer.component'
 local utils                  = require'regexplainer.utils'
 
 local M = {}
@@ -68,8 +68,6 @@ end
 ---@return string[], string
 --
 local function get_sublines(component, options, state)
-  local depth = (state.depth or 0)
-
   local sep = options.narrative.separator
 
   if type(options.narrative.separator) == "function" then
@@ -79,8 +77,8 @@ local function get_sublines(component, options, state)
   end
 
   local children = component.children
-  while (#children == 1 and (   component_pred.is_term(children[1])
-                             or component_pred.is_pattern(children[1]))) do
+  while (#children == 1 and (   comp.is_term(children[1])
+                             or comp.is_pattern(children[1]))) do
     children = children[1].children
   end
 
@@ -107,7 +105,7 @@ local function get_narrative_clause(component, options, state)
     prefix = ''
   end
 
-  if component_pred.is_alternation(component) then
+  if comp.is_alternation(component) then
     for i, child in ipairs(component.children) do
       local oxford = i == #component.children and 'or ' or ''
       local first_in_alt = i == 1
@@ -123,8 +121,8 @@ local function get_narrative_clause(component, options, state)
     end
   end
 
-  if component_pred.is_term(component) or component_pred.is_pattern(component) then
-    if component_pred.is_only_chars(component) then
+  if comp.is_term(component) or comp.is_pattern(component) then
+    if comp.is_only_chars(component) then
       infix = '`' .. component.text .. '`'
     else
       for _, child in ipairs(component.children) do
@@ -133,31 +131,31 @@ local function get_narrative_clause(component, options, state)
     end
   end
 
-  if component_pred.is_pattern_character(component) then
+  if comp.is_pattern_character(component) then
     infix = '`' .. utils.escape_markdown(component.text) .. '`'
   end
 
-  if component_pred.is_identity_escape(component) then
+  if   comp.is_identity_escape(component)
+    or comp.is_decimal_escape(component) then
     infix = '`' .. component.text:sub(2) .. '`'
 
-  elseif component_pred.is_special_character(component) then
+  elseif comp.is_special_character(component) then
     infix = '**' .. utils.escape_markdown(descriptions.describe_character(component)) .. '**'
 
-  elseif component_pred.is_escape(component) then
-    local char = component.text:sub(2)
-    local desc = descriptions.describe_escape(char) or char
+  elseif comp.is_escape(component) then
+    local desc = descriptions.describe_escape(component.text)
     infix = '**' .. desc .. '**'
   end
 
-  if component_pred.is_boundary_assertion(component) then
+  if comp.is_boundary_assertion(component) then
     infix = '**WB**'
   end
 
-  if component_pred.is_character_class(component) then
+  if comp.is_character_class(component) then
     infix = descriptions.describe_character_class(component)
   end
 
-  if component_pred.is_capture_group(component) then
+  if comp.is_capture_group(component) then
     local sublines, sep = get_sublines(component, options, state)
     local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
 
@@ -171,13 +169,13 @@ local function get_narrative_clause(component, options, state)
 
   end
 
-  if component_pred.is_look_assertion(component) then
+  if comp.is_look_assertion(component) then
     if component.type == 'lookbehind_assertion' then
       state.lookbehind_found = true
     end
 
     local negation = component.negative and 'NOT ' or ''
-    local direction = component_pred.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
+    local direction = comp.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
     prefix = '**' .. negation .. direction .. ' ' .. '**'
 
     local sublines, sep = get_sublines(component, options, state)
@@ -191,8 +189,8 @@ local function get_narrative_clause(component, options, state)
       .. '\n'
   end
 
-  if not component_pred.is_capture_group(component)
-     and not component_pred.is_look_assertion(component) then
+  if not comp.is_capture_group(component)
+     and not comp.is_look_assertion(component) then
     suffix = get_suffix(component)
   end
 
@@ -230,8 +228,12 @@ function M.recurse(components, options, state)
                                                last = last,
                                              }))
 
-    if component_pred.is_lookahead_assertion(component) then
-      clauses[#clauses] = clauses[#clauses] .. ' ' .. next_clause
+    if comp.is_lookahead_assertion(component) then
+      if not clauses[#clauses] then
+        table.insert(clauses, next_clause)
+      else
+        clauses[#clauses] = clauses[#clauses] .. ' ' .. next_clause
+      end
     else
       table.insert(clauses, next_clause)
     end
