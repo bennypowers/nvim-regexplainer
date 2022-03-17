@@ -24,7 +24,7 @@ function M.describe_quantifier(quantifier_node)
       return '>= ' .. min .. 'x'
     end
   else
-    return text:match'%d' .. 'x'
+    return text:match'%d+' .. 'x'
   end
 end
 
@@ -43,7 +43,7 @@ function M.describe_character_class(component)
     if component_pred.is_identity_escape(child) then
       text = '`' .. text:sub(-1) .. '`'
     elseif component_pred.is_escape(child) then
-      text = '**' .. M.describe_escape(text:gsub([[\\]], [[\]]):sub(2)) .. '**'
+      text = '**' .. M.describe_escape(text) .. '**'
     else
       text = '`' .. text .. '`'
     end
@@ -53,9 +53,10 @@ function M.describe_character_class(component)
   return description
 end
 
----@param char string
+---@param escape string
 ---@return string
-function M.describe_escape(char)
+function M.describe_escape(escape)
+  local char = escape:gsub([[\\]], [[\]]):sub(2)
   if     char == 'd' then return '0-9'
   elseif char == 'n' then return 'LF'
   elseif char == 'r' then return 'CR'
