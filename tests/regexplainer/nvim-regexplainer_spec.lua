@@ -11,15 +11,7 @@ describe("Regexplainer", function()
 
   describe('in TypeScript', function()
     before_each(function()
-      Utils.editfile('tests/fixtures/fixture.ts')
-      local found
-      local counter = 0
-      while not found and counter < 5 do
-        Utils.editfile('tests/fixtures/fixture.ts')
-        found = pcall(function() vim.api.nvim_win_set_cursor(0, { 1, 2 }) end)
-        counter = counter + 1
-      end
-      assert(found == true, 'Could not load buffer')
+      assert:set_parameter('fixture_filename', 'tests/fixtures/fixture.ts')
     end)
 
     describe('with default options', function()

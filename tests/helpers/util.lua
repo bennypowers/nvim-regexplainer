@@ -1,13 +1,14 @@
 local regexplainer = require'regexplainer'
+
 local M = {}
 
 function M.clear_test_state()
+  -- Clear regexplainer state
+  regexplainer.teardown()
+
   -- Create fresh window
   vim.cmd("top new | wincmd o")
   local keepbufnr = vim.api.nvim_get_current_buf()
-
-  -- Clear regexplainer state
-  regexplainer.teardown()
 
   -- Cleanup any remaining buffers
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
@@ -15,6 +16,7 @@ function M.clear_test_state()
       vim.api.nvim_buf_delete(bufnr, { force = true })
     end
   end
+
   assert(#vim.api.nvim_tabpage_list_wins(0) == 1, "Failed to properly clear tab")
   assert(#vim.api.nvim_list_bufs() == 1, "Failed to properly clear buffers")
 end
@@ -28,9 +30,13 @@ function M.editfile(testfile)
 end
 
 function M.assert_popup_text_at_row(row, expected)
-  vim.api.nvim_win_set_cursor(0, { row, 2 })
+  M.editfile(assert:get_parameter('fixture_filename'))
+  local moved = pcall(vim.api.nvim_win_set_cursor, 0, { row, 2 })
+  while moved == false do
+    M.editfile(assert:get_parameter('fixture_filename'))
+  end
   regexplainer.show()
-  M.wait_for_buffer()
+  M.wait_for_regexplainer_buffer()
   local bufnr = require'regexplainer.buffers'.get_buffers()[1].bufnr
   local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false);
   local text = table.concat(lines, '\n')
@@ -42,14 +48,14 @@ function M.sleep(n)
   os.execute("sleep " .. tonumber(n))
 end
 
-function M.wait_for_buffer()
+function M.wait_for_regexplainer_buffer()
   local buffers
   while not buffers do
     local gotten = require'regexplainer.buffers'.get_buffers()
     if gotten and #gotten > 0 then
       buffers = gotten
     else
-      M.sleep(1)
+      M.sleep(0.1)
     end
   end
   return buffers
