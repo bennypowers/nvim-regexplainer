@@ -111,11 +111,11 @@ local M = {}
 --- Show the explainer for the regexp under the cursor
 ---@param config RegexplainerOptions)
 function M.show(config)
-  local should_debounce = vim.fn.getenv('REGEXPLAINER_DEBOUNCE') == 'false'
+  local should_debounce = vim.fn.getenv('REGEXPLAINER_DEBOUNCE') ~= 'false'
   if should_debounce then
-    return _show(config)
-  else
     return debounced_show(config)
+  else
+    return _show(config)
   end
 end
 

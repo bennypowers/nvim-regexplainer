@@ -9,6 +9,7 @@ local node_pred           = require'regexplainer.utils.treesitter'
 ---@field optional?       boolean                   # a regexp component marked with `?`
 ---@field zero_or_more?   boolean                   # a regexp component marked with `*`
 ---@field one_or_more?    boolean                   # a regexp component marked with `+`
+---@field lazy?           boolean                   # a regexp quantifier component marked with `?`
 
 ---@class RegexplainerParentComponent               : RegexplainerBaseComponent
 ---@field children?       RegexplainerComponent     # Components may contain other components, e.g. capture groups
@@ -135,16 +136,22 @@ end
 ---@return boolean
 --
 function M.is_simple_pattern_character(component)
+  local has_extras = false
+
   if not component or M.is_special_character(component) then
     return false
-  elseif M.is_identity_escape(component) then
-    return true
-  elseif component.type ~= 'pattern_character' then
-    for key in pairs(component) do
-      if not elem(key, common_keys) then
-        return false
-      end
+  end
+
+  for _, key in ipairs(vim.tbl_keys(component)) do
+    if not has_extras then
+      has_extras = not elem(key, common_keys)
     end
+  end
+
+  if M.is_identity_escape(component) or M.is_decimal_escape(component) then
+    return not has_extras
+  elseif component.type ~= 'pattern_character' then
+    return not has_extras
   end
   return true
 end
@@ -156,6 +163,16 @@ function M.is_special_character(component)
   return component.type:find'assertion$'
       or component.type:find'character$'
      and component.type ~= 'pattern_character'
+end
+
+---@param node TreesitterNode
+local function has_lazy(node)
+  for child in node:iter_children() do
+    if child:type() == 'lazy' then
+      return true
+    end
+  end
+  return false
 end
 
 ---@alias TreesitterNode any
@@ -194,6 +211,7 @@ function M.make_components(node, parent, root_regex_node)
 
         if M.is_identity_escape(previous) then
           previous.text = previous.text .. last_char
+          previous.type = 'pattern_character'
         elseif not M.is_control_escape(previous) and not M.is_character_class_escape(previous) then
           previous.text = previous.text:sub(1, -2)
           previous.type = 'pattern_character'
@@ -210,10 +228,14 @@ function M.make_components(node, parent, root_regex_node)
     -- the following node types should not be added to the component tree
     -- instead, they should merely modify the previous node in the tree
     if type == 'optional' or type == 'one_or_more' or type == 'zero_or_more' then
-      append_previous { [type] = true }
+      append_previous {
+        [type] = true,
+        lazy = has_lazy(child),
+      }
     elseif type == 'count_quantifier' then
       append_previous {
         quantifier = require'regexplainer.component.descriptions'.describe_quantifier(child),
+        lazy = has_lazy(child),
       }
 
     -- pattern characters and simple escapes can be collapsed together
@@ -221,13 +243,16 @@ function M.make_components(node, parent, root_regex_node)
     elseif type == 'pattern_character'
            and M.is_simple_pattern_character(previous) then
       previous.text = previous.text .. ts_utils.get_node_text(child)[1]
-    elseif type == 'identity_escape'
-           and not node_pred.is_control_escape(child)
+      previous.type = 'pattern_character'
+    elseif (type == 'identity_escape' or type == 'decimal_escape')
            and M.is_simple_pattern_character(previous) then
       if node_type ~= 'character_class' then
         previous.text = previous.text .. ts_utils.get_node_text(child)[1]:sub(-1)
       else
-        table.insert(components, { type = type, text = ts_utils.get_node_text(child)[1] })
+        table.insert(components, {
+          type = type,
+          text = ts_utils.get_node_text(child)[1],
+        })
       end
 
     elseif type == 'start_assertion' then

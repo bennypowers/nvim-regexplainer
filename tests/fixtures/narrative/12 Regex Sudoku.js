@@ -1,8 +1,62 @@
+/**
+ * **0-9** (_>= 0x_)
+ * capture group 1:
+ *   **0-9**
+ */
 /\d*(\d)/;
+
+/**
+ *  **NOT followed by **:
+ *   non-capturing group (_>= 1x_):
+ *     **ANY** (_>= 0x_)
+ *     **LF**
+ *   non-capturing group (_0x_):
+ *     **ANY** (_10x_)
+ *   `1`
+ *   **WB**
+ */
 /(?!(?:.*\n)+(?:.{10}){0}\1\b)/;
+
+/**
+ * **NOT followed by **:
+ *   **0-9** (_>= 0x_)
+ *   ` `
+ *   non-capturing group (_>= 0x_) (_lazy_):
+ *     **ANY** (_10x_)
+ *   `1`
+ *   **WB**
+ */
 /(?!\d*\ (?:.{10})*?\1\b)/;
+
+/**
+ * **NOT followed by **:
+ *   **0-9** (_>= 0x_)
+ *   ` `
+ *   non-capturing group (_0-1x_):
+ *     **ANY** (_10x_)
+ *   `1`
+ *   **WB**
+ */
 /(?!\d*\ (?:.{10}){0,1}\1\b)/;
+
+/**
+ *  **NOT followed by **:
+ *   non-capturing group (_1-2x_):
+ *     **ANY** (_>= 0x_)
+ *     **LF**
+ *   non-capturing group (_0x_):
+ *     **ANY** (_30x_)
+ *   non-capturing group (_0-2x_):
+ *     **ANY** (_10x_)
+ *   `1`
+ *   **WB**
+ */
 /(?!(?:.*\n){1,2}(?:.{30}){0}(?:.{10}){0,2}\1\b)/;
+
+/**
+ * **0-9** (_>= 0x_)
+ * **WS** (_>= 1x_)
+ */
 /\d*\s+/;
 
 /\d*(?!\1)/;
