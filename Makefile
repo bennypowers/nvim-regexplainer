@@ -3,23 +3,35 @@ clean:
 	@rm -rf vendor/nvim-treesitter
 	@rm -rf vendor/nui.nvim
 
-.PHONY: prepare test watch ci
+.PHONY: test run_tests watch ci unload
 
-test:
-	@REGEXPLAINER_DEBOUNCE=false nvim \
+unload:
+	@pgrep -f 'nvim --headless' | xargs kill -s KILL
+
+run_tests:
+	@REGEXPLAINER_DEBOUNCE=false \
+		nvim \
 		--headless \
 		-u tests/mininit.lua \
 		-c "PlenaryBustedDirectory tests/regexplainer { minimal_init = 'tests/mininit.lua' }" \
 	  -c "qa!"
 
-watch: prepare
+test: unload
+	@make run_tests
+
+watch:
 	@echo "Testing..."
-	@find . -type f -name '*.lua' ! -path "./vendor/**/*" | entr -d make test
+	@find . \
+		-type f \
+		-name '*.lua' \
+		-o -name '*.js' \
+		! -path "./vendor/**/*" | entr -d make test
 
 ci:
 	@nvim \
+		--headless \
 		--noplugin \
 		-u tests/mininit.lua \
-		-c "TSUpdateSync typescript regex" \
+		-c "TSUpdateSync javascript typescript regex" \
 		-c "qa!"
-	@make test
+	@make run_tests

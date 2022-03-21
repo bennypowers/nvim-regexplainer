@@ -1,6 +1,8 @@
 local descriptions           = require'regexplainer.component.descriptions'
 local comp                   = require'regexplainer.component'
 local utils                  = require'regexplainer.utils'
+local log                    = require'regexplainer.utils'.debug
+
 
 local M = {}
 
@@ -30,6 +32,10 @@ local function get_suffix(component)
     suffix = suffix .. ' (_>= 0x_)'
   elseif component.one_or_more then
     suffix = suffix .. ' (_>= 1x_)'
+  end
+
+  if component.lazy then
+    suffix = suffix .. ' (_lazy_)'
   end
 
   return suffix
@@ -125,8 +131,14 @@ local function get_narrative_clause(component, options, state)
     if comp.is_only_chars(component) then
       infix = '`' .. component.text .. '`'
     else
-      for _, child in ipairs(component.children) do
-        infix = infix .. get_narrative_clause(child, options, state)
+      for i, child in ipairs(component.children) do
+
+        local child_clause = get_narrative_clause(child, options, state)
+        if comp.is_capture_group(child) and comp.is_simple_pattern_character(component.children[i - 1]) then
+          infix = infix .. '\n' ..  child_clause
+        else
+          infix = infix .. child_clause
+        end
       end
     end
   end
@@ -194,7 +206,9 @@ local function get_narrative_clause(component, options, state)
     suffix = get_suffix(component)
   end
 
-  return prefix .. infix .. suffix
+  local clause = prefix .. infix .. suffix
+
+  return clause
 end
 
 ---@param components RegexplainerComponent[]

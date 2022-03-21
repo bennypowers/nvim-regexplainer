@@ -163,7 +163,11 @@ function M.get_regexp_pattern_at_cursor()
           local root = ts_utils.get_root_for_position(row, col + 1 --[[hack that works for js]], root_lang_tree)
 
           if not root then
-            return nil, 'no node immediately to the right of the regexp node'
+            root = ts_utils.get_root_for_node(next)
+
+            if not root then
+              return nil, 'no node immediately to the right of the regexp node'
+            end
           end
 
           node = root:named_descendant_for_range(row, col + 1, row, col + 1)

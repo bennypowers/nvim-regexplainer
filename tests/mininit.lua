@@ -1,8 +1,3 @@
--- For debugging
-function P(...)
-  print(unpack(vim.tbl_map(vim.inspect, { ... })))
-end
-
 vim.cmd([[
   set rtp+=.
   set noswapfile
@@ -11,5 +6,8 @@ vim.cmd([[
   runtime plugin/regexplainer.vim
 ]])
 
-require'nvim-treesitter.configs'.setup {}
+local did, configs = pcall(require, 'nvim-treesitter.configs')
+if not did then print(configs) end
+
+configs.setup {}
 
