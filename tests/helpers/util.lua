@@ -1,12 +1,12 @@
 local regexplainer = require'regexplainer'
-local log = require'regexplainer.utils'.debug
-local ts_utils = require'nvim-treesitter.ts_utils'
 local get_node_text = require'nvim-treesitter.ts_utils'.get_node_text
 local parsers = require "nvim-treesitter.parsers"
+local log = require'regexplainer.utils'.debug
+-- local ts_utils = require'nvim-treesitter.ts_utils'
 
 local M = {}
 
--- NOTE: ideally, we'd query for the jsdoc description as an injected language, but 
+-- NOTE: ideally, we'd query for the jsdoc description as an injected language, but
 -- so far I've been unable to make that happen, after that, I tried querying the JSDoc tree
 -- from the line above the regexp, but that also proved difficult
 -- so, at long last, we do some sring manipulation
@@ -50,6 +50,7 @@ local query_js = vim.treesitter.query.parse_query('javascript', [[
 local function get_expected_from_jsdoc(comment)
   local lines = {}
   for line in comment:gmatch("([^\n]*)\n?") do
+    log(line)
     local clean = line
       :gsub('^/%*%*', '')
       :gsub('%*/$', '')
@@ -75,7 +76,7 @@ local function get_cases()
       local expected = get_expected_from_jsdoc(prev_text)
       table.insert(results, {
         text = text,
-        example = expected, 
+        example = expected,
         row = node:start(),
       })
     end
