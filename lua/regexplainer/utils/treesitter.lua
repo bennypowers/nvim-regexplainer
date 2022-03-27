@@ -2,7 +2,7 @@ local ts_utils            = require'nvim-treesitter.ts_utils'
 
 local M = {}
 
-local GUARD_MAX = 100000
+local GUARD_MAX = 1000
 
 local node_types = {
   'alternation',
