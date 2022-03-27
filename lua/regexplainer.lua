@@ -29,7 +29,7 @@ local config_command_map = {
 ---@field mode?             "'narrative'"                        # TODO: 'ascii', 'graphical'
 ---@field auto?             boolean                              # Automatically display when cursor enters a regexp
 ---@field debug?            boolean                              # Notify debug logs
----@field display?          "'split'"|"'popup'"                  # Split mode or Popup mode
+---@field display?          "'split'"|"'popup'"|"'pasteboard'"   # Split, Popup, or pasteboard mode
 ---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind. Supports `which-key`
 ---@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
 ---@field popup?            NuiPopupBufferOptions                # options for the popup buffer

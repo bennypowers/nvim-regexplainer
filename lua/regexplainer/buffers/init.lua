@@ -1,8 +1,9 @@
 local utils   = require'regexplainer.utils'
 local autocmd = require'nui.utils.autocmd'
 local event   = autocmd.event
+local Scratch = require'regexplainer.buffers.scratch'
 
----@alias NuiBuffer NuiPopup|NuiSplit
+---@alias NuiBuffer NuiPopup|NuiSplit|ScratchBuffer
 
 ---@class WindowOptions
 ---@field wrap         boolean
@@ -79,7 +80,7 @@ local popup_defaults = {
 }
 
 ---@param object NuiBuffer
----@returns "'NuiSplit'"|"'NuiPopup'"
+---@returns "'NuiSplit'"|"'NuiPopup'"|"'Scratch'"
 local function get_class_name(object)
   local passed, class_name = pcall(function()
     return getmetatable(getmetatable(object).__index).__name
@@ -91,14 +92,10 @@ local function get_class_name(object)
   end
 end
 
----@param buffer NuiBuffer
-local function is_popup(buffer)
-  return get_class_name(buffer) == 'NuiPopup'
-end
-
----@param buffer NuiBuffer
-local function is_split(buffer)
-  return get_class_name(buffer) == 'NuiSplit'
+local function is_buftype(classname)
+  return function(buffer)
+    return get_class_name(buffer) == classname
+  end
 end
 
 ---@alias Timer any
@@ -132,7 +129,11 @@ function M.get_buffer(options)
   ---@type NuiBuffer
   local buffer
 
-  if options.display == 'split' then
+  if options.display == 'pasteboard' then
+    -- Create scratch buffer
+    buffer = Scratch({})
+
+  elseif options.display == 'split' then
     if last.split then return last.split end
     local Split = require'nui.split'
     local buffer_options = vim.tbl_deep_extend('force', shared_options, split_defaults, options.split or {})
@@ -172,7 +173,7 @@ function M.render(buffer, renderer, options, components, state)
     buffer:mount()
   end
 
-  if is_popup(buffer) then
+  if M.is_popup(buffer) then
     local win_width = vim.api.nvim_win_get_width(last.parent.winnr)
 
     local width = 0
@@ -202,13 +203,17 @@ function M.render(buffer, renderer, options, components, state)
 
   renderer.set_lines(buffer, lines)
 
-  if is_split(buffer) then
+  if M.is_split(buffer) then
     vim.api.nvim_set_current_win(last.parent.winnr)
     vim.api.nvim_set_current_buf(last.parent.bufnr)
     vim.api.nvim_win_set_height(buffer.winid, height)
   end
 
-  if options.auto then
+  if M.is_scratch(buffer) then
+    buffer:yank('*')
+    M.kill_buffer(buffer)
+
+  elseif options.auto then
     autocmd.buf.define(last.parent.bufnr, {
       event.BufHidden,
       event.BufLeave,
@@ -216,6 +221,7 @@ function M.render(buffer, renderer, options, components, state)
       M.kill_buffer(buffer)
     end)
   end
+
 end
 
 --- Close and unload a buffer
@@ -293,6 +299,21 @@ end
 function M.clear_timers()
   pcall(close_last_timer)
 end
+
+---Is it a popup buffer?
+---@param buffer NuiBuffer
+---@return boolean
+M.is_popup = is_buftype('NuiPopup')
+
+---Is it a split buffer?
+---@param buffer NuiBuffer
+---@return boolean
+M.is_split = is_buftype('NuiSplit')
+
+---Is it a scratch buffer?
+---@param buffer NuiBuffer
+---@return boolean
+M.is_scratch = is_buftype('Scratch')
 
 return M
 
