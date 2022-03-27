@@ -8,18 +8,35 @@ local function setup_narrative()
   regexplainer.setup()
 end
 
+local function file_filter(filename)
+  local filter = vim.env.REGEXPLAINER_TEST_FILTER or nil
+  if filter then
+    return filename:match[[Sudoku]]
+  else
+    return #filename > 0
+  end
+end
+
+local function row_filter(row)
+  -- return row == 71
+  return true
+end
+
 describe("Regexplainer", function()
   before_each(Utils.clear_test_state)
   describe('Narratives', function()
-    local files = scan.scan_dir('tests/fixtures/narrative', { depth = 1 })
+    local all_files = scan.scan_dir('tests/fixtures/narrative', { depth = 1 })
+    local files = vim.tbl_filter(file_filter, all_files)
     for _, file in ipairs(files) do
       local category = file:gsub('tests/fixtures/narrative/%d+ (.*)%.js', '%1')
       describe(category, function ()
         before_each(setup_narrative)
         for result in Utils.iter_regexes_with_descriptions(file) do
-          it(result.text, function ()
-            Utils.assert_string(result.text, result.example, file .. ':' .. result.row)
-          end)
+          if (row_filter(result.row)) then
+            it(result.text, function ()
+              Utils.assert_string(result.text, result.example, file .. ':' .. result.row)
+            end)
+          end
         end
       end)
     end

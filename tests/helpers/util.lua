@@ -1,8 +1,11 @@
 local regexplainer = require'regexplainer'
-local get_node_text = require'nvim-treesitter.ts_utils'.get_node_text
+local ts_utils = require'nvim-treesitter.ts_utils'
 local parsers = require "nvim-treesitter.parsers"
+
+local get_node_text = ts_utils.get_node_text
+
+---@diagnostic disable-next-line: unused-local
 local log = require'regexplainer.utils'.debug
--- local ts_utils = require'nvim-treesitter.ts_utils'
 
 local M = {}
 
@@ -50,7 +53,6 @@ local query_js = vim.treesitter.query.parse_query('javascript', [[
 local function get_expected_from_jsdoc(comment)
   local lines = {}
   for line in comment:gmatch("([^\n]*)\n?") do
-    log(line)
     local clean = line
       :gsub('^/%*%*', '')
       :gsub('%*/$', '')
@@ -127,6 +129,8 @@ function M.clear_test_state()
     end
   end
 
+  vim.cmd[[ bufdo bd! ]]
+
   assert(#vim.api.nvim_tabpage_list_wins(0) == 1, "Failed to properly clear tab")
   assert(#vim.api.nvim_list_bufs() == 1, "Failed to properly clear buffers")
 end
@@ -159,7 +163,7 @@ function M.assert_string(regexp, expected, message)
   end)
 
   local re_bufnr = buffers[1].bufnr
-  local lines = vim.api.nvim_buf_get_lines(re_bufnr, 0, -1, false);
+  local lines = vim.api.nvim_buf_get_lines(re_bufnr, 0, vim.api.nvim_buf_line_count(re_bufnr), false);
   local text = table.concat(lines, '\n')
 
   -- Cleanup any remaining buffers
