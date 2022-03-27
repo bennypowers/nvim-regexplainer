@@ -15,7 +15,7 @@ Heavily inspired by the venerable [atom-regexp-railroad](https://github.com/klor
 use { 'bennypowers/nvim-regexplainer',
       config = function() require'regexplainer'.setup()  end,
       requires = {
-        'nvim-lua/plenary.nvim',
+        'nvim-treesitter/nvim-treesitter',
         'MunifTanjim/nui.nvim',
       } }
 ```
@@ -34,7 +34,7 @@ require'regexplainer'.setup {
   -- Whether to log debug messages
   debug = false, 
 
-  -- 'split', 'popup'
+  -- 'split', 'popup', 'pasteboard'
   display = 'popup',
 
   mappings = {
@@ -53,8 +53,15 @@ require'regexplainer'.setup {
 ```
 
 ### `display`
+
+Regexplainer offers a small variety of display modes to suit your preferences.
+
+#### Split Window
+
 Set to `split` to display the explainer in a window below the editor.
 The window will be reused, and has the filetype `Regexplainer`
+
+#### Popup Below Cursor
 
 Set to `popup` (the default) to display the explainer in a popup below the cursor.
 When the cursor moves, the popup closes. if `auto` is set, the popup will automatically display
@@ -86,6 +93,16 @@ require'regexplainer'.show {
 ```
 
 You could use this to, for example, set a different border based on the state of your editor.
+
+#### Pasteboard
+
+The `pasteboard` display mode copies the regexplanation to your system pasteboard.
+This can be useful if you'd like to share the explanation of a regexp with your teammates,
+or if you'd like to report a mistake in regexplainer.
+
+```lua
+require'regexplainer'.show { display = "pasteboard" }
+```
 
 ### Render Options
 
@@ -142,6 +159,6 @@ is complex, e.g.
   via [hologram](https://github.com/edluffy/hologram.nvim)
   and [kitty image protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
 - [ ] online documentation
-- [ ] some unit tests or something, i guess
+- [x] some unit tests or something, i guess
 
 
