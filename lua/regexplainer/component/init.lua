@@ -1,6 +1,9 @@
 local ts_utils            = require'nvim-treesitter.ts_utils'
 local node_pred           = require'regexplainer.utils.treesitter'
 
+---@diagnostic disable-next-line: unused-local
+local log = require'regexplainer.utils'.debug
+
 ---@class RegexplainerBaseComponent
 ---@field type            RegexplainerComponentType # Which type of component
 ---@field text            string                    # full text of this regexp component
@@ -130,17 +133,8 @@ function M.is_capture_group(component)
   return found ~= nil
 end
 
---- A 'simple' component contains no children or modifiers.
---- Used e.g. to concatenate successive unmodified pattern_characters
----@param component RegexplainerComponent
----@return boolean
---
-function M.is_simple_pattern_character(component)
+function M.is_simple_component(component)
   local has_extras = false
-
-  if not component or M.is_special_character(component) then
-    return false
-  end
 
   for _, key in ipairs(vim.tbl_keys(component)) do
     if not has_extras then
@@ -148,12 +142,26 @@ function M.is_simple_pattern_character(component)
     end
   end
 
-  if M.is_identity_escape(component) or M.is_decimal_escape(component) then
-    return not has_extras
-  elseif component.type ~= 'pattern_character' then
-    return not has_extras
+  return not has_extras
+end
+
+--- A 'simple' component contains no children or modifiers.
+--- Used e.g. to concatenate successive unmodified pattern_characters
+---@param component RegexplainerComponent
+---@return boolean
+--
+function M.is_simple_pattern_character(component)
+  if not component or M.is_special_character(component) then
+    return false
   end
-  return true
+
+  if M.is_identity_escape(component)
+  or M.is_decimal_escape(component)
+  or component.type ~= 'pattern_character' then
+    return M.is_simple_component(component)
+  end
+
+  return M.is_simple_component(component)
 end
 
 ---@param component RegexplainerComponent
@@ -203,18 +211,24 @@ function M.make_components(node, parent, root_regex_node)
   for child in node:iter_children() do
     local type = child:type()
 
+    local child_text = ts_utils.get_node_text(child)[1];
+
     local previous = components[#components]
 
     local function append_previous(props)
+        if previous.type == 'identity_escape' then
+            previous.text = previous.text:gsub([[^\+]], '')
+        end
+
       if M.is_simple_pattern_character(previous) and #previous.text > 1 then
         local last_char = previous.text:sub(-1)
 
-        if M.is_identity_escape(previous) then
+        if  M.is_identity_escape(previous)
+        and M.is_simple_component(previous) then
           previous.text = previous.text .. last_char
-          previous.type = 'pattern_character'
-        elseif not M.is_control_escape(previous) and not M.is_character_class_escape(previous) then
+        elseif not M.is_control_escape(previous)
+           and not M.is_character_class_escape(previous) then
           previous.text = previous.text:sub(1, -2)
-          previous.type = 'pattern_character'
           table.insert(components, { type = 'pattern_character', text = last_char })
           previous = components[#components]
         end
@@ -222,7 +236,7 @@ function M.make_components(node, parent, root_regex_node)
 
       components[#components] = vim.tbl_deep_extend('force', previous, props)
 
-      return previous
+      return components[#components]
     end
 
     -- the following node types should not be added to the component tree
@@ -238,20 +252,26 @@ function M.make_components(node, parent, root_regex_node)
         lazy = has_lazy(child),
       }
 
+
     -- pattern characters and simple escapes can be collapsed together
     -- so long as they are not immediately followed by a modifier
     elseif type == 'pattern_character'
            and M.is_simple_pattern_character(previous) then
-      previous.text = previous.text .. ts_utils.get_node_text(child)[1]
+      if previous.type == 'identity_escape' then
+          previous.text = previous.text:gsub([[^\+]], '')
+      end
+
+      previous.text = previous.text .. child_text
       previous.type = 'pattern_character'
     elseif (type == 'identity_escape' or type == 'decimal_escape')
            and M.is_simple_pattern_character(previous) then
-      if node_type ~= 'character_class' then
-        previous.text = previous.text .. ts_utils.get_node_text(child)[1]:sub(-1)
+      if node_type ~= 'character_class'
+      and not node_pred.is_modifier(ts_utils.get_next_node(child)) then
+        previous.text = previous.text .. child_text:gsub([[^\+]], '')
       else
         table.insert(components, {
           type = type,
-          text = ts_utils.get_node_text(child)[1],
+          text = child_text
         })
       end
 
@@ -302,7 +322,7 @@ function M.make_components(node, parent, root_regex_node)
 
       local component = {
         type = type,
-        text = ts_utils.get_node_text(child)[1],
+        text = child_text
       }
 
       -- increment `depth` for each layer of capturing groups encountered

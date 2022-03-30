@@ -3,7 +3,7 @@
  * `@scope/`
  * capture group 1:
  *   **ANY** (_>= 0x_)
- * `\\.js"`
+ * `.js"`
  * `;` (_optional_)
  * **END**
  */
@@ -23,3 +23,12 @@
  */
 /@scope\/(.*)\.(?<extension>graphql|(?:t|j|cs)s)";?/;
 
+/**
+ * `\<link rel="stylesheet" href="`
+ * capture group 1:
+ *   Either `a` or `b`
+ * `.css"`
+ * `/` (_optional_)
+ * `\>`
+ */
+/<link rel="stylesheet" href="(a|b)\.css"\/?>/;

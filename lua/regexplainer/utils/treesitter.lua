@@ -11,6 +11,7 @@ local node_types = {
   'character_class_escape',
   'chunk',
   'class_range',
+  'count_quantifier',
   'document',
   'group_name',
   'identity_escape',
@@ -18,11 +19,14 @@ local node_types = {
   'lookbehind_assertion',
   'named_capturing_group',
   'non_capturing_group',
+  'one_or_more',
+  'optional',
   'pattern',
   'pattern_character',
   'program',
   'source',
   'term',
+  'zero_or_more',
 }
 
 for _, type in ipairs(node_types) do
@@ -118,6 +122,13 @@ function M.is_look_assertion(node)
   else
     return require'regexplainer.component'.is_look_assertion { type = node:type() }
   end
+end
+
+function M.is_modifier(node)
+  return M.is_optional(node)
+      or M.is_one_or_more(node)
+      or M.is_zero_or_more(node)
+      or M.is_count_quantifier(node)
 end
 
 --- Using treesitter, find the current node at cursor, and traverse up to the

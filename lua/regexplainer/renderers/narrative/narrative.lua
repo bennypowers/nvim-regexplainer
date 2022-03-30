@@ -1,6 +1,8 @@
 local descriptions           = require'regexplainer.component.descriptions'
 local comp                   = require'regexplainer.component'
 local utils                  = require'regexplainer.utils'
+
+---@diagnostic disable-next-line: unused-local
 local log                    = require'regexplainer.utils'.debug
 
 
@@ -149,7 +151,8 @@ local function get_narrative_clause(component, options, state)
 
   if   comp.is_identity_escape(component)
     or comp.is_decimal_escape(component) then
-    infix = '`' .. component.text:sub(2) .. '`'
+    local escaped = component.text:gsub([[^\+]], '')
+    infix = '`' .. escaped .. '`'
 
   elseif comp.is_special_character(component) then
     infix = '**' .. utils.escape_markdown(descriptions.describe_character(component)) .. '**'
