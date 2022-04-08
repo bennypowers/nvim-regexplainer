@@ -147,7 +147,7 @@ function M.setup(config)
     vim.cmd [[
       augroup Regexplainer
         au!
-        autocmd CursorMoved *.html,*.js,*.ts RegexplainerShow
+        autocmd CursorMoved *.html,*.js,*.cjs,*.mjs,*.ts,*.jsx,*.tsx,*.cjsx,*.mjsx RegexplainerShow
       augroup END
     ]]
   end
