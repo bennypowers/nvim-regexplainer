@@ -9,11 +9,13 @@ https://user-images.githubusercontent.com/1466420/156946492-a05600dc-0a5b-49e6-9
 
 Heavily inspired by the venerable [atom-regexp-railroad](https://github.com/klorenz/atom-regex-railroad-diagrams/).
 
+> 👉 **NOTE**: Requires Neovim 0.7 👈
+
 ## 🚚 Installation
 
 ```lua
 use { 'bennypowers/nvim-regexplainer',
-      config = function() require'regexplainer'.setup()  end,
+      config = function() require'regexplainer'.setup() end,
       requires = {
         'nvim-treesitter/nvim-treesitter',
         'MunifTanjim/nui.nvim',

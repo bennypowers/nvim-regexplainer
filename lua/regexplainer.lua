@@ -91,7 +91,7 @@ local function show(options)
     end
 
     buffers.render(buffer, renderer, options, components, {
-      full_regexp_text = ts_utils.get_node_text(node)[1],
+      full_regexp_text = vim.treesitter.query.get_node_text(node, 0),
     })
   else
     buffers.hide_all()
