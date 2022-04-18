@@ -4,6 +4,8 @@ local M = {}
 
 local GUARD_MAX = 1000
 
+local get_node_text = vim.treesitter.query.get_node_text
+
 local node_types = {
   'alternation',
   'boundary_assertion',
@@ -103,7 +105,7 @@ end
 function M.is_control_escape(node)
   return require'regexplainer.component'.is_control_escape {
     type = node:type(),
-    text = ts_utils.get_node_text(node)[1],
+    text = get_node_text(node, 0),
   }
 end
 
@@ -117,7 +119,7 @@ end
 function M.is_look_assertion(node)
   ---@see https://github.com/tree-sitter/tree-sitter-regex/issues/13
   if node:type() == 'ERROR' then
-    local text = ts_utils.get_node_text(node)
+    local text = get_node_text(node, 0)
     return text:match [[^%(%<]]
   else
     return require'regexplainer.component'.is_look_assertion { type = node:type() }

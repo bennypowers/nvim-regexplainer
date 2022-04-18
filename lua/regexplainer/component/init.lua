@@ -4,6 +4,8 @@ local node_pred           = require'regexplainer.utils.treesitter'
 ---@diagnostic disable-next-line: unused-local
 local log = require'regexplainer.utils'.debug
 
+local get_node_text = vim.treesitter.query.get_node_text
+
 ---@class RegexplainerBaseComponent
 ---@field type            RegexplainerComponentType # Which type of component
 ---@field text            string                    # full text of this regexp component
@@ -192,7 +194,7 @@ end
 ---@return RegexplainerComponent[]
 --
 function M.make_components(node, parent, root_regex_node)
-  local text = ts_utils.get_node_text(node)[1]
+  local text = get_node_text(node, 0)
   local cached = lookuptables[text]
   if cached then return cached end
 
@@ -211,7 +213,7 @@ function M.make_components(node, parent, root_regex_node)
   for child in node:iter_children() do
     local type = child:type()
 
-    local child_text = ts_utils.get_node_text(child)[1];
+    local child_text = get_node_text(child, 0)
 
     local previous = components[#components]
 
@@ -283,7 +285,7 @@ function M.make_components(node, parent, root_regex_node)
     -- see https://github.com/tree-sitter/tree-sitter-javascript/issues/214
     --
     elseif type == 'ERROR' then
-      local error_text = ts_utils.get_node_text(child)[1]
+      local error_text = get_node_text(child, 0)
       local row, e_start, _, e_end = child:range()
       local _, re_start = node:range()
 
@@ -309,7 +311,7 @@ function M.make_components(node, parent, root_regex_node)
       else
         table.insert(components, {
           type = type,
-          text = ts_utils.get_node_text(child)[1],
+          text = get_node_text(child, 0),
           error = {
             text = error_text,
             position = { row, { e_start, e_end } },
@@ -356,7 +358,7 @@ function M.make_components(node, parent, root_regex_node)
             -- find the group_name and apply it to the component
             for grandchild in child:iter_children() do
               if node_pred.is_group_name(grandchild) then
-                component.group_name = ts_utils.get_node_text(grandchild)[1]
+                component.group_name = get_node_text(grandchild, 0)
                 break
               end
             end

@@ -1,8 +1,7 @@
 local regexplainer = require'regexplainer'
-local ts_utils = require'nvim-treesitter.ts_utils'
 local parsers = require "nvim-treesitter.parsers"
 
-local get_node_text = ts_utils.get_node_text
+local get_node_text = vim.treesitter.query.get_node_text
 
 ---@diagnostic disable-next-line: unused-local
 local log = require'regexplainer.utils'.debug
@@ -19,36 +18,6 @@ local query_js = vim.treesitter.query.parse_query('javascript', [[
   (expression_statement
     (regex)) @expr
   ]])
-
--- local query_jsdoc = vim.treesitter.query.parse_query('jsdoc', [[
---   (tag
---     (tag_name)
---     (description) @description)
--- ]])
---
--- local function get_jsdoc_tag_description(lines)
---   return table.concat(vim.tbl_map(function(line)
---     return line:gsub('%s+%* ', '', 1)
---   end, lines), '\n'):gsub("^%s*(.-)%s*$", "%1")
--- end
---
--- local function get_expected_from_jsdoc(comment)
---   local jsdoc_parser = vim.treesitter.get_string_parser(comment, 'jsdoc')
---   local jsdoc_tree = jsdoc_parser:parse()[1]
---
---   for id, cnode in query_jsdoc:iter_captures(jsdoc_tree:root(), comment) do
---     local name = query_jsdoc.captures[id]
---
---     if name == 'description' then
---       local node_lines = get_node_text(cnode)
---       local prev = cnode:prev_sibling()
---       local prev_text = table.concat(get_node_text(prev), '\n')
---       if prev_text == '@example' then
---         return get_jsdoc_tag_description(node_lines):gsub('EXPECTED:\n', '')
---       end
---     end
---   end
--- end
 
 local function get_expected_from_jsdoc(comment)
   local lines = {}
@@ -72,10 +41,9 @@ local function get_cases()
   for id, node in query_js:iter_captures(tree:root(), 0) do
     local name = query_js.captures[id] -- name of the capture in the query
     local prev = node:prev_sibling()
-    local prev_text = table.concat(get_node_text(prev), '\n')
-    if name == 'expr' and prev:type() == 'comment' then
-      local text = table.concat(get_node_text(node:named_child('pattern')), '\n')
-      local expected = get_expected_from_jsdoc(prev_text)
+    if name == 'expr' and prev and prev:type() == 'comment' then
+      local text = get_node_text(node:named_child('pattern'), 0)
+      local expected = get_expected_from_jsdoc(get_node_text(prev, 0))
       table.insert(results, {
         text = text,
         example = expected,
@@ -101,7 +69,6 @@ end
 
 function M.iter_regexes_with_descriptions(filename)
   M.editfile(filename)
-
   local cases = get_cases()
 
   local index = 0
@@ -189,7 +156,7 @@ function M.wait_for_regexplainer_buffer()
 end
 
 function M.get_info_on_capture(id, name, node, metadata)
-  local yes, text = pcall(get_node_text, node)
+  local yes, text = pcall(get_node_text, node, 0)
   return {
       id, name,
       text = yes and text or nil,

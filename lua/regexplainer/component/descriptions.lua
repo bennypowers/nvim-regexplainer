@@ -1,4 +1,3 @@
-local ts_utils    = require'nvim-treesitter.ts_utils'
 local utils       = require'regexplainer.utils'
 local component_pred = require'regexplainer.component'
 
@@ -10,7 +9,7 @@ local M = {}
 --
 function M.describe_quantifier(quantifier_node)
   -- TODO: there's probably a better way to do this
-  local text = ts_utils.get_node_text(quantifier_node)[1]
+  local text = vim.treesitter.query.get_node_text(quantifier_node, 0)
   if text:match',' then
     local matches = {}
     for match in text:gmatch'%d+' do
@@ -36,7 +35,7 @@ function M.describe_character_class(component)
   local description = (component.negative and 'Any except ' or 'One of ')
   for i, child in ipairs(component.children) do
     -- TODO: lua equivalent of Intl?
-    local oxford = (#component.children > 1 and i == #component.children) and 'or ' or ''
+    local oxford = (#(component.children) > 1 and i == #(component.children)) and 'or ' or ''
     local initial_sep = i == 1 and '' or ', '
     local text = utils.escape_markdown(child.text)
 
