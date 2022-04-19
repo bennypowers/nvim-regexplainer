@@ -1,4 +1,3 @@
-local ts_utils  = require'nvim-treesitter.ts_utils'
 local component = require'regexplainer.component'
 local tree      = require'regexplainer.utils.treesitter'
 local utils     = require'regexplainer.utils'
@@ -25,9 +24,13 @@ local config_command_map = {
   showPopup  = {'RegexplainerShowPopup', 'Show Regexplainer in a popup'},
 }
 
+---Augroup for auto = true
+local augroup_name = 'Regexplainer'
+
 ---@class RegexplainerOptions
 ---@field mode?             "'narrative'"                        # TODO: 'ascii', 'graphical'
 ---@field auto?             boolean                              # Automatically display when cursor enters a regexp
+---@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
 ---@field debug?            boolean                              # Notify debug logs
 ---@field display?          "'split'"|"'popup'"|"'pasteboard'"   # Split, Popup, or pasteboard mode
 ---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind. Supports `which-key`
@@ -38,6 +41,17 @@ local config_command_map = {
 local default_config = {
   mode = 'narrative',
   auto = false,
+  filetypes = {
+    'html',
+    'js',
+    'cjs',
+    'mjs',
+    'ts',
+    'jsx',
+    'tsx',
+    'cjsx',
+    'mjsx',
+  },
   debug = false,
   display = 'popup',
   mappings = {
@@ -142,14 +156,17 @@ function M.setup(config)
     end
   end
 
-  -- setup auto commend if configured
+  -- setup autocommand
   if local_config.auto then
-    vim.cmd [[
-      augroup Regexplainer
-        au!
-        autocmd CursorMoved *.html,*.js,*.cjs,*.mjs,*.ts,*.jsx,*.tsx,*.cjsx,*.mjsx RegexplainerShow
-      augroup END
-    ]]
+    local pattern = vim.tbl_map(function(x) return '*.' .. x end, local_config.filetypes)
+    vim.api.nvim_create_augroup(augroup_name, { clear = true })
+    vim.api.nvim_create_autocmd('CursorMoved', {
+      group = 'Regexplainer',
+      pattern = pattern,
+      callback = function() M.show() end,
+    })
+  else
+    pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
   end
 end
 
@@ -159,11 +176,7 @@ function M.teardown()
   local_config = vim.tbl_deep_extend('keep', {}, default_config)
   buffers.clear_timers()
   buffers.hide_all()
-  vim.cmd [[
-    augroup Regexplainer
-      au!
-    augroup END
-  ]]
+  pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
 end
 
 --- **INTERNAL** notify the component tree for the current regexp
