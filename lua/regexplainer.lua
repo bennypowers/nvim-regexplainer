@@ -2,6 +2,7 @@ local component = require'regexplainer.component'
 local tree      = require'regexplainer.utils.treesitter'
 local utils     = require'regexplainer.utils'
 local buffers   = require'regexplainer.buffers'
+local defer     = require'regexplainer.utils.defer'
 
 ---@class RegexplainerMappings
 ---@field show?       string      # shows regexplainer
@@ -73,6 +74,7 @@ local local_config = vim.tbl_deep_extend('keep', default_config, {})
 ---@return nil
 --
 local function show(options)
+  options = vim.tbl_deep_extend('force', local_config, options or {})
   local node, error = tree.get_regexp_pattern_at_cursor()
 
   if error and options.debug then
@@ -112,25 +114,20 @@ local function show(options)
   end
 end
 
-local defer = require'regexplainer.utils.defer'
+local disable_auto = false
 
-local function _show(config)
-  return show(vim.tbl_deep_extend('force', local_config, config or {}))
-end
+local show_debounced_trailing, timer_trailing = defer.debounce_trailing(show, 5)
 
-local debounced_show, timer = defer.debounce_trailing(_show, 5)
+buffers.register_timer(timer_trailing)
 
 local M = {}
 
 --- Show the explainer for the regexp under the cursor
----@param config RegexplainerOptions)
-function M.show(config)
-  local should_debounce = vim.fn.getenv('REGEXPLAINER_DEBOUNCE') ~= 'false'
-  if should_debounce then
-    return debounced_show(config)
-  else
-    return _show(config)
-  end
+---@param options? RegexplainerOptions
+function M.show(options)
+  disable_auto = true
+  show(options)
+  disable_auto = false
 end
 
 --- Merge in the user config and setup key bindings
@@ -139,8 +136,6 @@ end
 --
 function M.setup(config)
   local_config = vim.tbl_deep_extend('keep', config or {}, default_config)
-
-  buffers.register_timer(timer)
 
   -- bind keys from config
   local has_which_key = pcall(require, 'which-key')
@@ -163,7 +158,11 @@ function M.setup(config)
     vim.api.nvim_create_autocmd('CursorMoved', {
       group = 'Regexplainer',
       pattern = pattern,
-      callback = function() M.show() end,
+      callback = function()
+        if not disable_auto then
+          show_debounced_trailing()
+        end
+      end,
     })
   else
     pcall(vim.api.nvim_del_augroup_by_name, augroup_name)

@@ -100,18 +100,14 @@ end
 
 ---@alias Timer any
 
----@type Timer
-local last_timer
+---@type Timer[]
+local timers = {}
 
---- Closes the last timer and replaces it with the new one
----@param timer Timer
+--- Closes all timers
 --
-local function close_last_timer(timer)
-  if last_timer then
-    last_timer:close()
-  end
-  if timer and timer ~= last_timer then
-    last_timer = timer
+local function close_timers()
+  for _, timer in ipairs(timers) do
+    timer:close()
   end
 end
 
@@ -228,7 +224,6 @@ end
 ---@param buffer NuiBuffer
 --
 function M.kill_buffer(buffer)
-  -- pcall(close_last_timer)
   if buffer then
     pcall(function () buffer:hide() end)
     pcall(function () buffer:unmount() end)
@@ -291,13 +286,13 @@ end
 ---@param timer Timer
 --
 function M.register_timer(timer)
-  pcall(close_last_timer, timer)
+  table.insert(timers, timer)
 end
 
 --- **INTERNAL** clear timers
 --
 function M.clear_timers()
-  pcall(close_last_timer)
+  pcall(close_timers)
 end
 
 ---Is it a popup buffer?
