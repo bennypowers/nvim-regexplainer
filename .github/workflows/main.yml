@@ -1,7 +1,14 @@
 name: main
 on:
-  - push
-  - pull_request
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - ready_for_review
+      - auto_merge_enabled
+  push:
+    branches:
+      - main
 
 jobs:
   test:
@@ -10,8 +17,8 @@ jobs:
     strategy:
       matrix:
         nvim-versions:
-          - 'stable'
-          - 'nightly'
+          - stable
+          - nightly
     steps:
       - name: checkout
         uses: actions/checkout@v2

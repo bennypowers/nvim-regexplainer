@@ -28,6 +28,7 @@ watch:
 		! -path "./vendor/**/*" | entr -d make test
 
 ci:
+	@nvim --version
 	@nvim \
 		--headless \
 		--noplugin \
