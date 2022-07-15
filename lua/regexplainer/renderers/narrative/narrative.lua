@@ -49,10 +49,16 @@ end
 --
 local function get_group_heading(component)
   local name = component.group_name and ('`' .. component.group_name .. '`') or ''
-  return (
-      component.type == 'named_capturing_group' and 'named capture group ' .. component.capture_group .. ' ' .. name
-          or component.type == 'non_capturing_group' and 'non-capturing group '
-          or 'capture group ' .. component.capture_group):gsub(' $', '')
+  local header
+  if component.type == 'named_capturing_group' then
+    header = 'named capture group ' .. component.capture_group .. ' ' .. name
+  elseif component.type == 'non_capturing_group' then
+    header = 'non-capturing group '
+  else
+    header = 'capture group ' .. component.capture_group
+  end
+  return header:gsub(' $', '')
+
 end
 
 ---@param orig_sep  string                # the original configured separator string
