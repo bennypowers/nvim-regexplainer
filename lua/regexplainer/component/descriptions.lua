@@ -1,5 +1,5 @@
-local utils       = require'regexplainer.utils'
-local component_pred = require'regexplainer.component'
+local utils          = require 'regexplainer.utils'
+local component_pred = require 'regexplainer.component'
 
 local M = {}
 
@@ -10,10 +10,10 @@ local M = {}
 function M.describe_quantifier(quantifier_node)
   -- TODO: there's probably a better way to do this
   local text = vim.treesitter.query.get_node_text(quantifier_node, 0)
-  if text:match',' then
+  if text:match ',' then
     local matches = {}
-    for match in text:gmatch'%d+' do
-        table.insert(matches, match)
+    for match in text:gmatch '%d+' do
+      table.insert(matches, match)
     end
     local min = matches[1]
     local max = matches[2]
@@ -23,7 +23,7 @@ function M.describe_quantifier(quantifier_node)
       return '>= ' .. min .. 'x'
     end
   else
-    return text:match'%d+' .. 'x'
+    return text:match '%d+' .. 'x'
   end
 end
 
@@ -56,14 +56,14 @@ end
 ---@return string
 function M.describe_escape(escape)
   local char = escape:gsub([[\\]], [[\]]):sub(2)
-  if     char == 'd' then return '0-9'
+  if char == 'd' then return '0-9'
   elseif char == 'n' then return 'LF'
   elseif char == 'r' then return 'CR'
   elseif char == 's' then return 'WS'
   elseif char == 'b' then return 'WB'
   elseif char == 't' then return 'TAB'
   elseif char == 'w' then return 'WORD'
-  else                    return char
+  else return char
   end
 end
 
@@ -71,12 +71,11 @@ end
 ---@return string
 function M.describe_character(component)
   local type = component.type
-  if     type == 'start_assertion' then return 'START'
-  elseif type == 'end_assertion'   then return 'END'
-  elseif type == 'any_character'   then return 'ANY'
-  else                                  return component.text
+  if type == 'start_assertion' then return 'START'
+  elseif type == 'end_assertion' then return 'END'
+  elseif type == 'any_character' then return 'ANY'
+  else return component.text
   end
 end
 
 return M
-

@@ -9,16 +9,16 @@ local Scratch = setmetatable({
 }, {
   __name = 'Scratch',
   __call = function(class, options)
-      local self = setmetatable({}, { __index = class })
-      self._ = {
-        buf_options = options.buf_options,
-        loading = false,
-        mounted = false,
-        win_enter = options.enter,
-        win_options = options.win_options,
-      }
-      self.bufnr = vim.api.nvim_create_buf(false, true)
-      return self
+    local self = setmetatable({}, { __index = class })
+    self._ = {
+      buf_options = options.buf_options,
+      loading = false,
+      mounted = false,
+      win_enter = options.enter,
+      win_options = options.win_options,
+    }
+    self.bufnr = vim.api.nvim_create_buf(false, true)
+    return self
   end
 })
 

@@ -39,4 +39,3 @@ function M.escape_markdown(str)
 end
 
 return M
-

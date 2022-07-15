@@ -1,9 +1,9 @@
-local descriptions           = require'regexplainer.component.descriptions'
-local comp                   = require'regexplainer.component'
-local utils                  = require'regexplainer.utils'
+local descriptions = require 'regexplainer.component.descriptions'
+local comp         = require 'regexplainer.component'
+local utils        = require 'regexplainer.utils'
 
 ---@diagnostic disable-next-line: unused-local
-local log                    = require'regexplainer.utils'.debug
+local log = require 'regexplainer.utils'.debug
 
 
 local M = {}
@@ -28,7 +28,7 @@ local function get_suffix(component)
     suffix = ' (_' .. component.quantifier .. '_)'
   end
 
-  if     component.optional then
+  if component.optional then
     suffix = suffix .. ' (_optional_)'
   elseif component.zero_or_more then
     suffix = suffix .. ' (_>= 0x_)'
@@ -48,11 +48,11 @@ end
 ---@return string
 --
 local function get_group_heading(component)
-  local name = component.group_name and ('`'..component.group_name..'`') or ''
-
-  return (component.type == 'named_capturing_group' and 'named capture group ' .. component.capture_group .. ' ' .. name
-       or component.type == 'non_capturing_group' and 'non-capturing group '
-       or 'capture group '.. component.capture_group):gsub(' $', '')
+  local name = component.group_name and ('`' .. component.group_name .. '`') or ''
+  return (
+      component.type == 'named_capturing_group' and 'named capture group ' .. component.capture_group .. ' ' .. name
+          or component.type == 'non_capturing_group' and 'non-capturing group '
+          or 'capture group ' .. component.capture_group):gsub(' $', '')
 end
 
 ---@param orig_sep  string                # the original configured separator string
@@ -85,8 +85,8 @@ local function get_sublines(component, options, state)
   end
 
   local children = component.children
-  while (#children == 1 and (   comp.is_term(children[1])
-                             or comp.is_pattern(children[1]))) do
+  while (#children == 1 and (comp.is_term(children[1])
+      or comp.is_pattern(children[1]))) do
     children = children[1].children
   end
 
@@ -120,12 +120,12 @@ local function get_narrative_clause(component, options, state)
       local last_in_alt = i == #component.children
       prefix = 'Either '
       infix = infix
-              .. (first_in_alt and '' or #component.children == 2 and ' ' or ', ')
-              .. oxford
-              .. get_narrative_clause(child, options, vim.tbl_extend('force', state, {
-                                        first = first_in_alt,
-                                        last = last_in_alt,
-                                      }))
+          .. (first_in_alt and '' or #component.children == 2 and ' ' or ', ')
+          .. oxford
+          .. get_narrative_clause(child, options, vim.tbl_extend('force', state, {
+            first = first_in_alt,
+            last = last_in_alt,
+          }))
     end
   end
 
@@ -137,7 +137,7 @@ local function get_narrative_clause(component, options, state)
 
         local child_clause = get_narrative_clause(child, options, state)
         if comp.is_capture_group(child) and comp.is_simple_pattern_character(component.children[i - 1]) then
-          infix = infix .. '\n' ..  child_clause
+          infix = infix .. '\n' .. child_clause
         else
           infix = infix .. child_clause
         end
@@ -149,8 +149,8 @@ local function get_narrative_clause(component, options, state)
     infix = '`' .. utils.escape_markdown(component.text) .. '`'
   end
 
-  if   comp.is_identity_escape(component)
-    or comp.is_decimal_escape(component) then
+  if comp.is_identity_escape(component)
+      or comp.is_decimal_escape(component) then
     local escaped = component.text:gsub([[^\+]], '')
     infix = '`' .. escaped .. '`'
 
@@ -174,13 +174,12 @@ local function get_narrative_clause(component, options, state)
     local sublines, sep = get_sublines(component, options, state)
     local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
 
-    infix =
-         get_group_heading(component)
-      .. get_suffix(component)
-      .. ':'
-      .. sep
-      .. contents
-      .. '\n'
+    infix = get_group_heading(component)
+        .. get_suffix(component)
+        .. ':'
+        .. sep
+        .. contents
+        .. '\n'
 
   end
 
@@ -196,16 +195,15 @@ local function get_narrative_clause(component, options, state)
     local sublines, sep = get_sublines(component, options, state)
     local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
 
-    infix =
-         get_suffix(component)
-      .. ':'
-      .. sep
-      .. contents
-      .. '\n'
+    infix = get_suffix(component)
+        .. ':'
+        .. sep
+        .. contents
+        .. '\n'
   end
 
   if not comp.is_capture_group(component)
-     and not comp.is_look_assertion(component) then
+      and not comp.is_look_assertion(component) then
     suffix = get_suffix(component)
   end
 
@@ -218,7 +216,7 @@ end
 ---@param options    RegexplainerOptions
 ---@param state      RegexplainerNarrativeRendererState
 function M.recurse(components, options, state)
-  state = state or {}
+  state         = state or {}
   local clauses = {}
   local lines   = {}
 
@@ -227,7 +225,7 @@ function M.recurse(components, options, state)
     local last = i == #components
     if component.type == 'ERROR' then
       lines[1] = '🚨 **Regexp contains an ERROR** at'
-      lines[2] = '`' .. state.full_regexp_text ..  '`'
+      lines[2] = '`' .. state.full_regexp_text .. '`'
       lines[3] = ' '
       local error_start_col = component.error.position[2][1]
       local from_re_start_to_err_start = error_start_col - component.error.start_offset + 1
@@ -239,11 +237,11 @@ function M.recurse(components, options, state)
     end
 
     local next_clause = get_narrative_clause(component,
-                                             options,
-                                             vim.tbl_extend('force', state, {
-                                               first = first,
-                                               last = last,
-                                             }))
+      options,
+      vim.tbl_extend('force', state, {
+        first = first,
+        last = last,
+      }))
 
     if comp.is_lookahead_assertion(component) then
       if not clauses[#clauses] then

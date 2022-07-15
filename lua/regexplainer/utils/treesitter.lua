@@ -1,4 +1,4 @@
-local ts_utils            = require'nvim-treesitter.ts_utils'
+local ts_utils = require 'nvim-treesitter.ts_utils'
 
 local M = {}
 
@@ -32,7 +32,7 @@ local node_types = {
 }
 
 for _, type in ipairs(node_types) do
-  M['is_'..type] = function (node)
+  M['is_' .. type] = function(node)
     if not node then return false end
     return node and node:type() == type
   end
@@ -44,23 +44,21 @@ end
 -- @param #Node node regexp treesitter node
 -- @returns boolean
 --
-function M. is_container(node)
+function M.is_container(node)
   if node:child_count() == 0 then
     return false
   else
     local type = node:type()
-    return (
-      type == 'anonymous_capturing_group' or
-      type == 'alternation'               or
-      type == 'character_class'           or
-      type == 'lookahead_assertion'       or
-      type == 'lookbehind_assertion'      or
-      type == 'named_capturing_group'     or
-      type == 'non_capturing_group'       or
-      type == 'pattern'                   or
-      type == 'term'                      or
-      false
-    )
+    return type == 'anonymous_capturing_group'
+        or type == 'alternation'
+        or type == 'character_class'
+        or type == 'lookahead_assertion'
+        or type == 'lookbehind_assertion'
+        or type == 'named_capturing_group'
+        or type == 'non_capturing_group'
+        or type == 'pattern'
+        or type == 'term'
+        or false
   end
 end
 
@@ -68,42 +66,42 @@ end
 -- a named_capturing_group gets registered as components when traversing the tree. Let's exclude them.
 --
 function M.is_punctuation(type)
-  return (
-    type == '^'   or
-    type == '('   or
-    type == ')'   or
-    type == '['   or
-    type == ']'   or
-    type == '!'   or
-    type == '='   or
-    type == '>'   or
-    type == '|'   or
-    type == '(?<' or
-    type == '(?:' or
-    type == '(?'  or
-    false
-  )
+  return type == '^'
+      or type == '('
+      or type == ')'
+      or type == '['
+      or type == ']'
+      or type == '!'
+      or type == '='
+      or type == '>'
+      or type == '|'
+      or type == '(?<'
+      or type == '(?:'
+      or type == '(?'
+      or false
 end
 
 -- Is this the document root (or close enough for our purposes)?
 --
 function M.is_document(node)
-  return node == nil
-      or node:type() == 'program'
-      or node:type() == 'document'
-      or node:type() == 'source'
-      or node:type() == 'source_file'
-      or node:type() == 'fragment'
-      or node:type() == 'chunk'
-      -- if we're in an embedded language
-      or node:type() == 'stylesheet'
-      or node:type() == 'haskell'
-      -- Wha happun?
-      or node:type() == 'ERROR' and not (M.is_pattern(node:parent()) or M.is_term(node:parent()))
+  if node == nil then return true else
+    local type = node:type()
+    return type == 'program'
+        or type == 'document'
+        or type == 'source'
+        or type == 'source_file'
+        or type == 'fragment'
+        or type == 'chunk'
+        -- if we're in an embedded language
+        or type == 'stylesheet'
+        or type == 'haskell'
+        -- Wha happun?
+        or type == 'ERROR' and not (M.is_pattern(node:parent()) or M.is_term(node:parent()))
+  end
 end
 
 function M.is_control_escape(node)
-  return require'regexplainer.component'.is_control_escape {
+  return require 'regexplainer.component'.is_control_escape {
     type = node:type(),
     text = get_node_text(node, 0),
   }
@@ -122,7 +120,7 @@ function M.is_look_assertion(node)
     local text = get_node_text(node, 0)
     return text:match [[^%(%<]]
   else
-    return require'regexplainer.component'.is_look_assertion { type = node:type() }
+    return require 'regexplainer.component'.is_look_assertion { type = node:type() }
   end
 end
 
@@ -173,7 +171,7 @@ function M.get_regexp_pattern_at_cursor()
           local root_lang_tree = parsers.get_parser(0)
           local row, col = ts_utils.get_node_range(next)
 
-          local root = ts_utils.get_root_for_position(row, col + 1 --[[hack that works for js]], root_lang_tree)
+          local root = ts_utils.get_root_for_position(row, col + 1--[[hack that works for js]] , root_lang_tree)
 
           if not root then
             root = ts_utils.get_root_for_node(next)
@@ -220,4 +218,3 @@ function M.get_regexp_pattern_at_cursor()
 end
 
 return M
-

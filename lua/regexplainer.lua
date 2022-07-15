@@ -1,8 +1,8 @@
-local component = require'regexplainer.component'
-local tree      = require'regexplainer.utils.treesitter'
-local utils     = require'regexplainer.utils'
-local buffers   = require'regexplainer.buffers'
-local defer     = require'regexplainer.utils.defer'
+local component = require 'regexplainer.component'
+local tree      = require 'regexplainer.utils.treesitter'
+local utils     = require 'regexplainer.utils'
+local buffers   = require 'regexplainer.buffers'
+local defer     = require 'regexplainer.utils.defer'
 
 ---@class RegexplainerMappings
 ---@field show?       string      # shows regexplainer
@@ -14,15 +14,15 @@ local defer     = require'regexplainer.utils.defer'
 ---Maps config.mappings keys to vim command names and descriptions
 --
 local config_command_map = {
-  show       = {'RegexplainerShow',      'Show Regexplainer'},
-  hide       = {'RegexplainerHide',      'Hide Regexplainer'},
-  toggle     = {'RegexplainerToggle',    'Toggle Regexplainer'},
-  show_split = {'RegexplainerShowSplit', 'Show Regexplainer in a split Window'},
+  show       = { 'RegexplainerShow', 'Show Regexplainer' },
+  hide       = { 'RegexplainerHide', 'Hide Regexplainer' },
+  toggle     = { 'RegexplainerToggle', 'Toggle Regexplainer' },
+  show_split = { 'RegexplainerShowSplit', 'Show Regexplainer in a split Window' },
   ---@deprecated
-  showSplit  = {'RegexplainerShowSplit', 'Show Regexplainer in a split Window'},
-  show_popup = {'RegexplainerShowPopup', 'Show Regexplainer in a popup'},
+  showSplit  = { 'RegexplainerShowSplit', 'Show Regexplainer in a split Window' },
+  show_popup = { 'RegexplainerShowPopup', 'Show Regexplainer in a popup' },
   ---@deprecated
-  showPopup  = {'RegexplainerShowPopup', 'Show Regexplainer in a popup'},
+  showPopup  = { 'RegexplainerShowPopup', 'Show Regexplainer in a popup' },
 }
 
 ---Augroup for auto = true
@@ -88,14 +88,14 @@ local function show(options)
     ---@type RegexplainerRenderer
     local renderer
     ---@type boolean, RexeplainerRenderer
-    local can_render, _renderer = pcall(require, 'regexplainer.renderers.'.. options.mode)
+    local can_render, _renderer = pcall(require, 'regexplainer.renderers.' .. options.mode)
 
     if can_render then
       renderer = _renderer
     else
       utils.notify(options.mode .. ' is not a valid renderer', 'warning')
       utils.notify(renderer, 'error')
-      renderer = require'regexplainer.renderers.narrative'
+      renderer = require 'regexplainer.renderers.narrative'
     end
 
     local components = component.make_components(node, nil, node)
@@ -103,7 +103,7 @@ local function show(options)
     local buffer = buffers.get_buffer(options)
 
     if not buffer and options.debug then
-      return require'regeplainer.renderers.debug'.render(options, components)
+      return require 'regeplainer.renderers.debug'.render(options, components)
     end
 
     buffers.render(buffer, renderer, options, components, {
@@ -143,7 +143,7 @@ function M.setup(config)
     local command = ':' .. config_command_map[cmd][1] .. '<CR>'
 
     if has_which_key then
-      local wk = require'which-key'
+      local wk = require 'which-key'
       local description = config_command_map[cmd][2]
       wk.register({ [binding] = { command, description } }, { mode = 'n' })
     else
@@ -201,4 +201,3 @@ function M.toggle()
 end
 
 return M
-

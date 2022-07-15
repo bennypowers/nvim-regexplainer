@@ -8,6 +8,6 @@
 ---@type table<string, RegexplainerRenderer>
 local M = {}
 
-M.narrative = require'regexplainer.renderers.narrative'
+M.narrative = require 'regexplainer.renderers.narrative'
 
 return M

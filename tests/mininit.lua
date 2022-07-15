@@ -10,4 +10,3 @@ local did, configs = pcall(require, 'nvim-treesitter.configs')
 if not did then print(configs) end
 
 configs.setup {}
-

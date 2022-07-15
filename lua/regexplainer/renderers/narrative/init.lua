@@ -1,5 +1,5 @@
-local narrative = require'regexplainer.renderers.narrative.narrative'
-local buffers   = require'regexplainer.buffers'
+local narrative = require 'regexplainer.renderers.narrative.narrative'
+local buffers   = require 'regexplainer.buffers'
 
 -- A textual, narrative renderer which describes a regexp in terse prose
 --
