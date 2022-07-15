@@ -1,7 +1,7 @@
-local utils   = require'regexplainer.utils'
-local autocmd = require'nui.utils.autocmd'
+local utils   = require 'regexplainer.utils'
+local autocmd = require 'nui.utils.autocmd'
 local event   = autocmd.event
-local Scratch = require'regexplainer.buffers.scratch'
+local Scratch = require 'regexplainer.buffers.scratch'
 
 ---@alias NuiBuffer NuiPopup|NuiSplit|ScratchBuffer
 
@@ -131,14 +131,14 @@ function M.get_buffer(options)
 
   elseif options.display == 'split' then
     if last.split then return last.split end
-    local Split = require'nui.split'
+    local Split = require 'nui.split'
     local buffer_options = vim.tbl_deep_extend('force', shared_options, split_defaults, options.split or {})
     buffer = Split(buffer_options)
     last.split = buffer
 
   elseif options.display == 'popup' then
     if last.popup then return last.popup end
-    local Popup = require'nui.popup'
+    local Popup = require 'nui.popup'
     local buffer_options = vim.tbl_deep_extend('force', shared_options, popup_defaults, options.popup or {})
     buffer = Popup(buffer_options)
     last.popup = buffer
@@ -191,7 +191,7 @@ function M.render(buffer, renderer, options, components, state)
         event.BufLeave,
         event.BufWinLeave,
         event.CursorMoved
-      }, function ()
+      }, function()
         M.kill_buffer(buffer)
       end, { once = true })
     end
@@ -213,7 +213,7 @@ function M.render(buffer, renderer, options, components, state)
     autocmd.buf.define(last.parent.bufnr, {
       event.BufHidden,
       event.BufLeave,
-    }, function ()
+    }, function()
       M.kill_buffer(buffer)
     end)
   end
@@ -225,8 +225,8 @@ end
 --
 function M.kill_buffer(buffer)
   if buffer then
-    pcall(function () buffer:hide() end)
-    pcall(function () buffer:unmount() end)
+    pcall(function() buffer:hide() end)
+    pcall(function() buffer:unmount() end)
     for i, buf in ipairs(all_buffers) do
       if buf == buffer then
         table.remove(all_buffers, i)
@@ -311,4 +311,3 @@ M.is_split = is_buftype('NuiSplit')
 M.is_scratch = is_buftype('Scratch')
 
 return M
-

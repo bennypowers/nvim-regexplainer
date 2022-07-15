@@ -1,8 +1,8 @@
-local Utils = require'tests.helpers.util'
-local log = require'regexplainer.utils'.debug
+local Utils = require 'tests.helpers.util'
+local log = require 'regexplainer.utils'.debug
 
-local regexplainer = require'regexplainer'
-local scan = require'plenary.scandir'
+local regexplainer = require 'regexplainer'
+local scan = require 'plenary.scandir'
 
 local function setup_narrative()
   regexplainer.setup()
@@ -11,7 +11,7 @@ end
 local function file_filter(filename)
   local filter = vim.env.REGEXPLAINER_TEST_FILTER or nil
   if filter then
-    return filename:match[[Sudoku]]
+    return filename:match [[Sudoku]]
   else
     return #filename > 0
   end
@@ -29,11 +29,11 @@ describe("Regexplainer", function()
     local files = vim.tbl_filter(file_filter, all_files)
     for _, file in ipairs(files) do
       local category = file:gsub('tests/fixtures/narrative/%d+ (.*)%.js', '%1')
-      describe(category, function ()
+      describe(category, function()
         before_each(setup_narrative)
         for result in Utils.iter_regexes_with_descriptions(file) do
           if (row_filter(result.row)) then
-            it(result.text, function ()
+            it(result.text, function()
               Utils.assert_string(result.text, result.example, file .. ':' .. result.row)
             end)
           end
@@ -42,4 +42,3 @@ describe("Regexplainer", function()
     end
   end)
 end)
-
