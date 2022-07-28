@@ -18,6 +18,7 @@ local Scratch = setmetatable({
       win_options = options.win_options,
     }
     self.bufnr = vim.api.nvim_create_buf(false, true)
+    self.type = 'Scratch'
     return self
   end
 })
