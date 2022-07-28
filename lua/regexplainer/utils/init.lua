@@ -16,8 +16,8 @@ end
 
 -- Composes vim.inspect witht vim.notify
 --
-function M.notify(value, level)
-  return vim.notify(vim.inspect(value), level)
+function M.notify(value, level, options)
+  return vim.notify(vim.inspect(value), level, options)
 end
 
 -- For debugging

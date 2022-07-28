@@ -3,7 +3,8 @@ local autocmd = require 'nui.utils.autocmd'
 local event   = autocmd.event
 local Scratch = require 'regexplainer.buffers.scratch'
 
----@alias NuiBuffer NuiPopup|NuiSplit|ScratchBuffer
+---@class NuiBuffer: ScratchBuffer|NuiPopup|NuiSplit
+---@field type       "NuiPopup"|"NuiSplit"|"Scratch"
 
 ---@class WindowOptions
 ---@field wrap         boolean
@@ -74,27 +75,27 @@ local popup_defaults = {
   relative = 'cursor',
   size = 1,
   border = {
-    padding = { 1, 2 },
     style = 'shadow',
+    padding = { 1, 2 },
   },
 }
 
 ---@param object NuiBuffer
 ---@returns "'NuiSplit'"|"'NuiPopup'"|"'Scratch'"
 local function get_class_name(object)
-  local passed, class_name = pcall(function()
-    return getmetatable(getmetatable(object).__index).__name
-  end)
-  if passed then
-    return class_name
+  if object.type then
+    return object.type
   else
-    utils.notify(class_name, 'error')
+    return getmetatable(getmetatable(object).__index).__name
   end
 end
 
-local function is_buftype(classname)
+---@param expected "'NuiSplit'"|"'NuiPopup'"|"'Scratch'"
+---@returns function(buffer: NuiBuffer): boolean
+local function is_buftype(expected)
   return function(buffer)
-    return get_class_name(buffer) == classname
+    local passed, classname = pcall(get_class_name, buffer)
+    return passed and classname == expected
   end
 end
 
@@ -122,25 +123,27 @@ local M = {}
 function M.get_buffer(options)
   options = options or {}
 
-  ---@type NuiBuffer
   local buffer
 
   if options.display == 'pasteboard' then
     -- Create scratch buffer
     buffer = Scratch({})
+    buffer.type = 'Scratch'
 
   elseif options.display == 'split' then
     if last.split then return last.split end
     local Split = require 'nui.split'
-    local buffer_options = vim.tbl_deep_extend('force', shared_options, split_defaults, options.split or {})
-    buffer = Split(buffer_options)
+    buffer = Split(vim.tbl_deep_extend('force', shared_options, split_defaults, options.split or {}) or
+      split_defaults)
+    buffer.type = 'NuiSplit'
     last.split = buffer
 
   elseif options.display == 'popup' then
     if last.popup then return last.popup end
     local Popup = require 'nui.popup'
-    local buffer_options = vim.tbl_deep_extend('force', shared_options, popup_defaults, options.popup or {})
-    buffer = Popup(buffer_options)
+    buffer = Popup(vim.tbl_deep_extend('force', shared_options, popup_defaults, options.popup or {}) or
+      popup_defaults)
+    buffer.type = 'NuiPopup'
     last.popup = buffer
   end
 
