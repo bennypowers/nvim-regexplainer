@@ -22,6 +22,12 @@ use { 'bennypowers/nvim-regexplainer',
       } }
 ```
 
+You need to install `regex` with `nvim-treesitter`
+
+```
+:TSInstall regex
+```
+
 ## 🤔 Config
 
 ```lua
