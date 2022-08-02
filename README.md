@@ -24,7 +24,7 @@ use { 'bennypowers/nvim-regexplainer',
 
 You need to install `regex` with `nvim-treesitter`
 
-```
+```vimscript
 :TSInstall regex
 ```
 
