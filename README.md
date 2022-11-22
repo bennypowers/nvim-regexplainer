@@ -55,7 +55,7 @@ require'regexplainer'.setup {
   -- Whether to log debug messages
   debug = false, 
 
-  -- 'split', 'popup', 'pasteboard'
+  -- 'split', 'popup'
   display = 'popup',
 
   mappings = {
@@ -115,16 +115,6 @@ require'regexplainer'.show {
 
 You could use this to, for example, set a different border based on the state of your editor.
 
-#### Pasteboard
-
-The `pasteboard` display mode copies the regexplanation to your system pasteboard.
-This can be useful if you'd like to share the explanation of a regexp with your teammates,
-or if you'd like to report a mistake in regexplainer.
-
-```lua
-require'regexplainer'.show { display = "pasteboard" }
-```
-
 ### Render Options
 
 `narrative.separator` can also be a function taking the current component and
@@ -161,6 +151,32 @@ capture group 1:
 > > `two`  
 > > named capture group 3 `inner`:  
 > > > `three`
+```
+
+## Yank
+You can yank the regexplanation into any register with the `yank` function. The 
+default register is `"`. This can be useful if you'd like to share the 
+explanation of a regexp with your teammates, or if you'd like to report a 
+mistake in regexplainer.
+The argument to `yank` is either a string (the register to yank to) or a table 
+with `register: string` and options to `show` (e.g. `mode = 'narrative', 
+narrative = {}`, etc.).
+
+For example, to copy the regexplanation to your system clipboard, use either of 
+these:
+
+```lua
+require'regexplainer'.yank'+'
+```
+
+```lua
+require'regexplainer'.yank { register = '+' }
+```
+
+You can also use the command `RegexplainerYank`
+
+```vim
+:RegexplainerYank +
 ```
 
 ## A Note about Lookbehinds

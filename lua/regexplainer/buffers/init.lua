@@ -125,7 +125,7 @@ function M.get_buffer(options)
 
   local buffer
 
-  if options.display == 'pasteboard' then
+  if options.display == 'register' then
     -- Create scratch buffer
     buffer = Scratch({})
     buffer.type = 'Scratch'
@@ -159,7 +159,7 @@ end
 
 ---@param buffer NuiBuffer
 ---@param renderer   RegexplainerRenderer
----@param options    RegexplainerOptions
+---@param options    RegexplainerRenderOptions
 ---@param components RegexplainerComponent[]
 ---@param state      RegexplainerRendererState
 --
@@ -209,7 +209,7 @@ function M.render(buffer, renderer, options, components, state)
   end
 
   if M.is_scratch(buffer) then
-    buffer:yank('*')
+    buffer:yank(options.register or '"')
     M.kill_buffer(buffer)
 
   elseif options.auto then

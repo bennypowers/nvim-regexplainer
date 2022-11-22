@@ -8,6 +8,7 @@ local defer     = require 'regexplainer.utils.defer'
 ---@field show?       string      # shows regexplainer
 ---@field hide?       string      # hides regexplainer
 ---@field toggle?     string      # toggles regexplainer
+---@field yank?       string      # yanks regexplainer
 ---@field show_split? string      # shows regexplainer in a split window
 ---@field show_popup? string      # shows regexplainer in a popup window
 
@@ -17,12 +18,9 @@ local config_command_map = {
   show       = { 'RegexplainerShow', 'Show Regexplainer' },
   hide       = { 'RegexplainerHide', 'Hide Regexplainer' },
   toggle     = { 'RegexplainerToggle', 'Toggle Regexplainer' },
+  yank       = { 'RegexplainerYank', 'Yank Regexplainer' },
   show_split = { 'RegexplainerShowSplit', 'Show Regexplainer in a split Window' },
-  ---@deprecated
-  showSplit  = { 'RegexplainerShowSplit', 'Show Regexplainer in a split Window' },
   show_popup = { 'RegexplainerShowPopup', 'Show Regexplainer in a popup' },
-  ---@deprecated
-  showPopup  = { 'RegexplainerShowPopup', 'Show Regexplainer in a popup' },
 }
 
 ---Augroup for auto = true
@@ -33,7 +31,7 @@ local augroup_name = 'Regexplainer'
 ---@field auto?             boolean                              # Automatically display when cursor enters a regexp
 ---@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
 ---@field debug?            boolean                              # Notify debug logs
----@field display?          "'split'"|"'popup'"|"'pasteboard'"   # Split, Popup, or pasteboard mode
+---@field display?          "'split'"|"'popup'"
 ---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind. Supports `which-key`
 ---@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
 ---@field popup?            NuiPopupBufferOptions                # options for the popup buffer
@@ -62,6 +60,9 @@ local default_config = {
     separator = '\n',
   },
 }
+
+---@class RegexplainerRenderOptions : RegexplainerOptions
+---@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 
 --- A deep copy of the default config.
 --- During setup(), any user-provided config will be folded in
@@ -130,8 +131,22 @@ function M.show(options)
   disable_auto = false
 end
 
+---@class RegexplainerYankOptions
+---@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
+
+--- Yank the explainer for the regexp under the cursor into a given register
+---@param options? string|RegexplainerYankOptions
+function M.yank(options)
+  disable_auto = true
+  if type(options) == 'string' then
+    options = { register = options }
+  end
+  show(vim.tbl_deep_extend('force', options, { display = 'register' }))
+  disable_auto = false
+end
+
 --- Merge in the user config and setup key bindings
----@param config RegexplainerOptions
+---@param config? RegexplainerOptions
 ---@return nil
 --
 function M.setup(config)
