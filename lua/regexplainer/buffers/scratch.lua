@@ -34,12 +34,17 @@ function Scratch:unmount()
   self._.mounted = false;
 end
 
+local function get_buffer_contents(bufnr)
+  local content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
+  return table.concat(content, "\n")
+end
+
 ---Yank the contents of the buffer, optionally into a specified register
 ---@param register? string The register to yank to. defaults to '*'
 function Scratch:yank(register)
   register = register or '*'
   vim.api.nvim_buf_call(self.bufnr, function()
-    vim.cmd('%y' .. register)
+    vim.fn.setreg(register, get_buffer_contents(self.bufnr))
   end)
 end
 
