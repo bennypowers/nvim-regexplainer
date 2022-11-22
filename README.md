@@ -55,10 +55,8 @@ require'regexplainer'.setup {
   -- Whether to log debug messages
   debug = false, 
 
-  -- 'split', 'popup', 'register'
+  -- 'split', 'popup'
   display = 'popup',
-
-  register = '"',
 
   mappings = {
     toggle = 'gR',
