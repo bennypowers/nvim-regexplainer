@@ -49,7 +49,7 @@ describe("Regexplainer", function()
       setup_narrative()
       local bufnr = vim.api.nvim_create_buf(true, true)
 
-      local expected = "`hello` or `world`"
+      local expected = "Either `hello` or `world`"
       local actual = 'FAIL'
 
       vim.api.nvim_buf_call(bufnr, function()
