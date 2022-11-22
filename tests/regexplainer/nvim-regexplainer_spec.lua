@@ -24,7 +24,6 @@ end
 
 describe("Regexplainer", function()
   before_each(Utils.clear_test_state)
-  after_each(Utils.clear_test_state)
   describe('Narratives', function()
     local all_files = scan.scan_dir('tests/fixtures/narrative', { depth = 1 })
     local files = vim.tbl_filter(file_filter, all_files)
@@ -45,7 +44,6 @@ describe("Regexplainer", function()
 
   describe('Yank', function()
     it('yanks into a given register', function()
-      Utils.clear_test_state()
       setup_narrative()
       local bufnr = vim.api.nvim_create_buf(true, true)
 
