@@ -146,7 +146,7 @@ function M.yank(options)
 end
 
 --- Merge in the user config and setup key bindings
----@param config RegexplainerOptions
+---@param config? RegexplainerOptions
 ---@return nil
 --
 function M.setup(config)
