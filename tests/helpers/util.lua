@@ -8,6 +8,8 @@ local log = require 'regexplainer.utils'.debug
 
 local M = {}
 
+M.register_name = 'test'
+
 -- NOTE: ideally, we'd query for the jsdoc description as an injected language, but
 -- so far I've been unable to make that happen, after that, I tried querying the JSDoc tree
 -- from the line above the regexp, but that also proved difficult
@@ -98,8 +100,10 @@ function M.clear_test_state()
 
   vim.cmd [[ bufdo bd! ]]
 
+  vim.fn.setreg(M.register_name, '')
   assert(#vim.api.nvim_tabpage_list_wins(0) == 1, "Failed to properly clear tab")
   assert(#vim.api.nvim_list_bufs() == 1, "Failed to properly clear buffers")
+  assert(vim.fn.getreg(M.register_name) == '', "Failed to properly clear register")
 end
 
 function M.assert_popup_text_at_row(row, expected)

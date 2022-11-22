@@ -41,4 +41,22 @@ describe("Regexplainer", function()
       end)
     end
   end)
+
+  describe('Yank', function()
+    it('yanks into a given register', function()
+      local bufnr = vim.api.nvim_create_buf(true, true)
+
+      vim.api.nvim_buf_call(bufnr, function()
+        vim.bo.filetype = 'javascript'
+        vim.api.nvim_set_current_line[[/hello|world/;]]
+        vim.cmd [[:norm l]]
+        regexplainer.yank(Utils.register_name)
+      end)
+
+      local actual = vim.fn.getreg(Utils.register_name)
+      local expected = "`hello` or `world`"
+
+      return assert.are.same(expected, actual, 'contents of a')
+    end)
+  end)
 end)
