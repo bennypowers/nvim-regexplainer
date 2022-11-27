@@ -38,6 +38,25 @@ for _, type in ipairs(node_types) do
   end
 end
 
+local function enter_js_re_node(node)
+  -- cribbed from get_node_at_cursor impl
+  local parsers = require 'nvim-treesitter.parsers'
+  local root_lang_tree = parsers.get_parser(0)
+  local row, col = ts_utils.get_node_range(node)
+
+  local root = ts_utils.get_root_for_position(row, col + 1--[[hack that works for js]] , root_lang_tree)
+
+  if not root then
+    root = ts_utils.get_root_for_node(node)
+
+    if not root then
+      return nil, 'no node immediately to the right of the regexp node'
+    end
+  end
+
+  return root:named_descendant_for_range(row, col + 1, row, col + 1)
+end
+
 -- Containers are regexp treesitter nodes which may contain leaf nodes like pattern_character.
 -- An example container is anonymous_capturing_group.
 --
@@ -139,7 +158,7 @@ function M.get_regexp_pattern_at_cursor()
   local cursor_node = ts_utils.get_node_at_cursor()
   local cursor_node_type = cursor_node and cursor_node:type()
   if not cursor_node or cursor_node_type == 'program' then
-    return nil, nil
+    return
   end
 
   local node = cursor_node
@@ -166,22 +185,7 @@ function M.get_regexp_pattern_at_cursor()
         if type == 'pattern' then
           node = next
         elseif type == 'regex_pattern' or type == 'regex' then
-          -- cribbed from get_node_at_cursor impl
-          local parsers = require "nvim-treesitter.parsers"
-          local root_lang_tree = parsers.get_parser(0)
-          local row, col = ts_utils.get_node_range(next)
-
-          local root = ts_utils.get_root_for_position(row, col + 1--[[hack that works for js]] , root_lang_tree)
-
-          if not root then
-            root = ts_utils.get_root_for_node(next)
-
-            if not root then
-              return nil, 'no node immediately to the right of the regexp node'
-            end
-          end
-
-          node = root:named_descendant_for_range(row, col + 1, row, col + 1)
+          node = enter_js_re_node(next)
         end
       end
     end

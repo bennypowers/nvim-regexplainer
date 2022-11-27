@@ -84,25 +84,21 @@ function M.iter_regexes_with_descriptions(filename)
 end
 
 function M.clear_test_state()
+  vim.fn.setreg(M.register_name, '')
+
   -- Clear regexplainer state
   regexplainer.teardown()
 
-  -- Create fresh window
-  vim.cmd("top new | wincmd o")
-  local keepbufnr = vim.api.nvim_get_current_buf()
-
   -- Cleanup any remaining buffers
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    if bufnr ~= keepbufnr then
-      vim.api.nvim_buf_delete(bufnr, { force = true })
-    end
+    vim.cmd.bwipeout({ count = bufnr, bang = true })
   end
 
-  vim.cmd [[ bufdo bd! ]]
+  -- Create fresh window
+  vim.cmd.new()
+  vim.cmd.only({ bang = true })
 
-  vim.fn.setreg(M.register_name, '')
   assert(#vim.api.nvim_tabpage_list_wins(0) == 1, "Failed to properly clear tab")
-  assert(#vim.api.nvim_list_bufs() == 1, "Failed to properly clear buffers")
   assert(vim.fn.getreg(M.register_name) == '', "Failed to properly clear register")
 end
 
