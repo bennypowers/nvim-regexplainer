@@ -38,6 +38,9 @@ for _, type in ipairs(node_types) do
   end
 end
 
+---Enter a parent-language's regexp node which contains the embedded
+---regexp grammar
+---@param node TSNode parent-language regexp node.
 local function enter_js_re_node(node)
   -- cribbed from get_node_at_cursor impl
   local parsers = require 'nvim-treesitter.parsers'
@@ -57,11 +60,11 @@ local function enter_js_re_node(node)
   return root:named_descendant_for_range(row, col + 1, row, col + 1)
 end
 
--- Containers are regexp treesitter nodes which may contain leaf nodes like pattern_character.
--- An example container is anonymous_capturing_group.
+---Containers are regexp treesitter nodes which may contain leaf nodes like pattern_character.
+---An example container is anonymous_capturing_group.
 --
--- @param #Node node regexp treesitter node
--- @returns boolean
+---@param node TSNode regexp treesitter node
+---@returns boolean
 --
 function M.is_container(node)
   if node:child_count() == 0 then
