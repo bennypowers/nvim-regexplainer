@@ -52,7 +52,7 @@ local shared_options = {
   enter = false,
   focusable = false,
   buf_options = {
-    filetype = "Regexplainer",
+    filetype = 'Regexplainer',
     readonly = false,
     modifiable = true,
   },
@@ -71,7 +71,7 @@ local split_defaults = {
 
 ---@type NuiPopupBufferOptions
 local popup_defaults = {
-  position = 1,
+  position = 2,
   relative = 'cursor',
   size = 1,
   border = {
