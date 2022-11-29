@@ -22,10 +22,10 @@ use { 'bennypowers/nvim-regexplainer',
       } }
 ```
 
-You need to install `regex` with `nvim-treesitter`
+You need to install `regex` with `nvim-treesitter`, as well as the grammar for whichever host language you're using. So for example if you wish to use Regexplainer with TypeScript sources, you need to do this:
 
 ```vimscript
-:TSInstall regex
+:TSInstall regex typescript
 ```
 
 ## 🤔 Config
