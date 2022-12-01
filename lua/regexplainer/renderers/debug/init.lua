@@ -3,7 +3,7 @@
 --
 local M = {}
 
----@param buffer NuiBuffer
+---@param buffer RegexplainerBuffer
 ---@param lines  string[]
 function M.set_lines(buffer, lines)
   vim.api.nvim_win_call(buffer.winid, function()

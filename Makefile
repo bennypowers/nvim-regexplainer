@@ -1,12 +1,13 @@
+SHELL:=/usr/bin/env bash
+.PHONY: test run_tests watch ci unload
+
 clean:
 	@rm -rf vendor/plenary.nvim
 	@rm -rf vendor/nvim-treesitter
 	@rm -rf vendor/nui.nvim
 
-.PHONY: test run_tests watch ci unload
-
 unload:
-	@pgrep -f 'nvim --headless' | xargs kill -s KILL
+	@pgrep -f 'nvim --headless' | xargs kill -s KILL;
 
 run_tests:
 	@REGEXPLAINER_DEBOUNCE=false \
@@ -16,16 +17,17 @@ run_tests:
 		-c "PlenaryBustedDirectory tests/regexplainer { minimal_init = 'tests/mininit.lua' }" \
 	  -c "qa!"
 
-test: unload
-	@make run_tests
-
 watch:
 	@echo "Testing..."
 	@find . \
 		-type f \
 		-name '*.lua' \
 		-o -name '*.js' \
-		! -path "./vendor/**/*" | entr -d make test
+		! -path "./vendor/**/*" | entr -d make run_tests
+
+test:
+	@make unload
+	@make run_tests
 
 ci:
 	@nvim --version

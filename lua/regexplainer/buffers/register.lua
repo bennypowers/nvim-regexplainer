@@ -1,3 +1,8 @@
+local Shared = require'regexplainer.buffers.shared'
+local Buffers = require'regexplainer.buffers'
+
+local M = {}
+
 ---A Nui-compatible scratch buffer.
 ---ephemeral, invisible, unlisted
 ---
@@ -36,16 +41,32 @@ end
 
 local function get_buffer_contents(bufnr)
   local content = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
-  return table.concat(content, "\n")
+  return table.concat(content, '\n')
 end
 
 ---Yank the contents of the buffer, optionally into a specified register
+---@param bufnr number The buffer to yank
 ---@param register? string The register to yank to. defaults to '*'
-function Scratch:yank(register)
+local function yank(bufnr, register)
   register = register or '*'
-  vim.api.nvim_buf_call(self.bufnr, function()
-    vim.fn.setreg(register, get_buffer_contents(self.bufnr))
+  vim.api.nvim_buf_call(bufnr, function()
+    vim.fn.setreg(register, get_buffer_contents(bufnr), 'l')
   end)
 end
 
-return Scratch
+local function after(self, _, options, _)
+  yank(self.bufnr, options.register or '"')
+  Buffers.kill_buffer(self)
+end
+
+--- Create scratch buffer
+function M.get_buffer(_, _)
+  local buffer = Scratch({})
+  buffer.type = 'Scratch'
+  buffer.init = Shared.default_buffer_init
+  buffer.after = after
+  return buffer
+end
+
+return M
+
