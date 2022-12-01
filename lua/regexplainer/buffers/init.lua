@@ -1,36 +1,4 @@
-local utils   = require 'regexplainer.utils'
-local autocmd = require 'nui.utils.autocmd'
-local event   = autocmd.event
-local Scratch = require 'regexplainer.buffers.scratch'
-
----@class NuiBuffer: ScratchBuffer|NuiPopup|NuiSplit
----@field type       "NuiPopup"|"NuiSplit"|"Scratch"
-
----@class WindowOptions
----@field wrap         boolean
----@field conceallevel "0|1|2|3"
-
----@class BufferOptions
----@field filetype     string
----@field readonly     boolean
----@field modifiable   boolean
-
----@class NuiSplitBufferOptions: NuiBufferOptions
----@field relative "'editor'"|"'window'"
----@field position "'bottom'"|"'top'"
----@field size     string
-
----@class NuiBorderOptions
----@field padding number[]
----@field style   "'shadow'"|"'double'"
-
----@class NuiPopupBufferOptions: NuiBufferOptions
----@field relative "'cursor'"
----@field position number
----@field size     number|table<"'width'"|"'height'", number>
----@field border   NuiBorderOptions
-
----@alias RegexplainerBufferOptions NuiSplitBufferOptions|NuiPopupBufferOptions
+local utils  = require 'regexplainer.utils'
 
 local all_buffers = {}
 
@@ -42,45 +10,7 @@ local last = {
   popup = nil,
 }
 
----@class NuiBufferOptions
----@field enter       boolean
----@field focusable   boolean
----@field buf_options BufferOptions
----@field win_options WindowOptions
---
-local shared_options = {
-  enter = false,
-  focusable = false,
-  buf_options = {
-    filetype = 'Regexplainer',
-    readonly = false,
-    modifiable = true,
-  },
-  win_options = {
-    wrap = true,
-    conceallevel = 2,
-  },
-}
-
----@type NuiSplitBufferOptions
-local split_defaults = {
-  relative = 'editor',
-  position = 'bottom',
-  size = '20%',
-}
-
----@type NuiPopupBufferOptions
-local popup_defaults = {
-  position = 2,
-  relative = 'cursor',
-  size = 1,
-  border = {
-    style = 'shadow',
-    padding = { 1, 2 },
-  },
-}
-
----@param object NuiBuffer
+---@param object RegexplainerBuffer
 ---@returns "'NuiSplit'"|"'NuiPopup'"|"'Scratch'"
 local function get_class_name(object)
   if object.type then
@@ -118,38 +48,30 @@ local M = {}
 
 --- Get the buffer in which to render the explainer
 ---@param options RegexplainerOptions
----@return NuiPopup|NuiSplit
+---@return RegexplainerBuffer
 --
 function M.get_buffer(options)
   options = options or {}
 
   local buffer
 
+  local state = {
+    last = last
+  }
+
   if options.display == 'register' then
-    -- Create scratch buffer
-    buffer = Scratch({})
-    buffer.type = 'Scratch'
+    buffer = require'regexplainer.buffers.register'.get_buffer(options, state)
 
   elseif options.display == 'split' then
-    if last.split then return last.split end
-    local Split = require 'nui.split'
-    buffer = Split(vim.tbl_deep_extend('force', shared_options, split_defaults, options.split or {}) or
-      split_defaults)
-    buffer.type = 'NuiSplit'
-    last.split = buffer
+    buffer = require'regexplainer.buffers.split'.get_buffer(options, state)
 
   elseif options.display == 'popup' then
-    if last.popup then return last.popup end
-    local Popup = require 'nui.popup'
-    buffer = Popup(vim.tbl_deep_extend('force', shared_options, popup_defaults, options.popup or {}) or
-      popup_defaults)
-    buffer.type = 'NuiPopup'
-    last.popup = buffer
+    buffer = require'regexplainer.buffers.popup'.get_buffer(options, state)
   end
 
   table.insert(all_buffers, buffer);
 
-  last.parent = {
+  state.last.parent = {
     winnr = vim.api.nvim_get_current_win(),
     bufnr = vim.api.nvim_get_current_buf(),
   }
@@ -157,74 +79,22 @@ function M.get_buffer(options)
   return buffer
 end
 
----@param buffer NuiBuffer
+---@param buffer RegexplainerBuffer
 ---@param renderer   RegexplainerRenderer
 ---@param options    RegexplainerRenderOptions
 ---@param components RegexplainerComponent[]
 ---@param state      RegexplainerRendererState
 --
 function M.render(buffer, renderer, options, components, state)
+  state.last = last
   local lines = renderer.get_lines(components, options, state)
-
-  local height = #lines
-
-  if not buffer._.mounted then
-    buffer:mount()
-  end
-
-  if M.is_popup(buffer) then
-    local win_width = vim.api.nvim_win_get_width(last.parent.winnr)
-
-    local width = 0
-
-    for _, line in ipairs(lines) do
-      if #line > width then
-        width = #line
-      end
-    end
-
-    if (win_width * .75) < width then
-      width = '75%'
-    end
-
-    buffer:set_size { width = width, height = height }
-
-    if options.auto then
-      buffer:on({
-        event.BufLeave,
-        event.BufWinLeave,
-        event.CursorMoved
-      }, function()
-        M.kill_buffer(buffer)
-      end, { once = true })
-    end
-  end
-
+  buffer:init(lines, options, state)
   renderer.set_lines(buffer, lines)
-
-  if M.is_split(buffer) then
-    vim.api.nvim_set_current_win(last.parent.winnr)
-    vim.api.nvim_set_current_buf(last.parent.bufnr)
-    vim.api.nvim_win_set_height(buffer.winid, height)
-  end
-
-  if M.is_scratch(buffer) then
-    buffer:yank(options.register or '"')
-    M.kill_buffer(buffer)
-
-  elseif options.auto then
-    autocmd.buf.define(last.parent.bufnr, {
-      event.BufHidden,
-      event.BufLeave,
-    }, function()
-      M.kill_buffer(buffer)
-    end)
-  end
-
+  buffer:after(lines, options, state)
 end
 
 --- Close and unload a buffer
----@param buffer NuiBuffer
+---@param buffer RegexplainerBuffer
 --
 function M.kill_buffer(buffer)
   if buffer then
@@ -299,17 +169,17 @@ function M.clear_timers()
 end
 
 ---Is it a popup buffer?
----@param buffer NuiBuffer
+---@param buffer RegexplainerBuffer
 ---@return boolean
 M.is_popup = is_buftype('NuiPopup')
 
 ---Is it a split buffer?
----@param buffer NuiBuffer
+---@param buffer RegexplainerBuffer
 ---@return boolean
 M.is_split = is_buftype('NuiSplit')
 
 ---Is it a scratch buffer?
----@param buffer NuiBuffer
+---@param buffer RegexplainerBuffer
 ---@return boolean
 M.is_scratch = is_buftype('Scratch')
 

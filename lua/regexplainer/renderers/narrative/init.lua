@@ -29,7 +29,7 @@ function M.get_lines(components, options, state)
   return lines
 end
 
----@param buffer NuiBuffer
+---@param buffer RegexplainerBuffer
 ---@param lines  string[]
 ---@return string
 function M.set_lines(buffer, lines)
