@@ -15,6 +15,8 @@ local get_node_text = vim.treesitter.query.get_node_text
 ---@field zero_or_more?   boolean                   # a regexp component marked with `*`
 ---@field one_or_more?    boolean                   # a regexp component marked with `+`
 ---@field lazy?           boolean                   # a regexp quantifier component marked with `?`
+---@field negative?       boolean                   # when it's a negative lookbehind
+---@field error?          any                       # parsing error
 
 ---@class RegexplainerParentComponent               : RegexplainerBaseComponent
 ---@field children?       RegexplainerComponent     # Components may contain other components, e.g. capture groups
@@ -24,19 +26,22 @@ local get_node_text = vim.treesitter.query.get_node_text
 ---@field capture_group?  number                    # which capture group does this group represent?
 
 ---@alias RegexplainerComponentType
----| "'alternation'"
----| "'boundary_assertion'"
----| "'lookahead_assertion'"
----| "'character_class'"
----| "'character_class_escape'"
----| "'class_range'"
----| "'pattern'"
----| "'pattern_character'"
----| "'term'"
+---| 'alternation'
+---| 'boundary_assertion'
+---| 'character_class'
+---| 'character_class_escape'
+---| 'class_range'
+---| 'control_escape',
+---| 'decimal_escape',
+---| 'identity_escape',
+---| 'lookahead_assertion'
+---| 'pattern'
+---| 'pattern_character'
+---| 'term'
 
 ---@alias RegexplainerComponent
----| "RegexplainerBaseComponent"
----| "RegexplainerCaptureGroupComponent"
+---| RegexplainerBaseComponent
+---| RegexplainerCaptureGroupComponent
 
 local M = {}
 
@@ -44,13 +49,13 @@ local M = {}
 local component_types = {
   'alternation',
   'boundary_assertion',
-  'lookahead_assertion',
-  'decimal_escape',
-  'identity_escape',
-  'control_escape',
   'character_class',
   'character_class_escape',
   'class_range',
+  'control_escape',
+  'decimal_escape',
+  'identity_escape',
+  'lookahead_assertion',
   'pattern',
   'pattern_character',
   'term',
@@ -170,9 +175,9 @@ end
 ---@return boolean
 --
 function M.is_special_character(component)
-  return component.type:find 'assertion$'
+  return not not (component.type:find 'assertion$'
       or component.type:find 'character$'
-      and component.type ~= 'pattern_character'
+      and component.type ~= 'pattern_character')
 end
 
 ---@param node TreesitterNode
@@ -322,6 +327,7 @@ function M.make_components(node, parent, root_regex_node)
       -- all other node types should be added to the tree
     else
 
+      ---@type RegexplainerComponent
       local component = {
         type = type,
         text = child_text

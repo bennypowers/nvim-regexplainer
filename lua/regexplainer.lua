@@ -27,11 +27,11 @@ local config_command_map = {
 local augroup_name = 'Regexplainer'
 
 ---@class RegexplainerOptions
----@field mode?             "'narrative'"                        # TODO: 'ascii', 'graphical'
+---@field mode?             'narrative'                          # TODO: 'ascii', 'graphical'
 ---@field auto?             boolean                              # Automatically display when cursor enters a regexp
 ---@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
 ---@field debug?            boolean                              # Notify debug logs
----@field display?          "'split'"|"'popup'"
+---@field display?          'split'|'popup'
 ---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind. Supports `which-key`
 ---@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
 ---@field popup?            NuiPopupBufferOptions                # options for the popup buffer
@@ -104,10 +104,10 @@ local function show(options)
     local buffer = buffers.get_buffer(options)
 
     if not buffer and options.debug then
-      return require 'regeplainer.renderers.debug'.render(options, components)
+      return require 'regexplainer.renderers.debug'.render(options, components)
     end
 
-    buffers.render(buffer, renderer, options, components, {
+    buffers.render(buffer, renderer, components, options, {
       full_regexp_text = vim.treesitter.query.get_node_text(node, 0),
     })
   else
@@ -196,7 +196,9 @@ end
 --- **INTERNAL** notify the component tree for the current regexp
 --
 function M.debug_components()
-  show({ auto = false, display = 'split', mode = 'debug' })
+  ---@type any
+  local mode = 'debug'
+  show({ auto = false, display = 'split', mode = mode })
 end
 
 --- Hide any displayed regexplainer buffers

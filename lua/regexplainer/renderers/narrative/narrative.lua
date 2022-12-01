@@ -9,7 +9,7 @@ local log = require 'regexplainer.utils'.debug
 local M = {}
 
 ---@class RegexplainerNarrativeRendererOptions
----@field separator string|fun(component: Component): string # clause separator
+---@field separator string|fun(component:Component):string # clause separator
 
 ---@class RegexplainerNarrativeRendererState : RegexplainerRendererState
 ---@field depth            number  # tracker for component depth

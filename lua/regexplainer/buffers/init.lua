@@ -11,7 +11,7 @@ local last = {
 }
 
 ---@param object RegexplainerBuffer
----@returns "'NuiSplit'"|"'NuiPopup'"|"'Scratch'"
+---@returns 'NuiSplit'|'NuiPopup'|'Scratch'
 local function get_class_name(object)
   if object.type then
     return object.type
@@ -20,8 +20,8 @@ local function get_class_name(object)
   end
 end
 
----@param expected "'NuiSplit'"|"'NuiPopup'"|"'Scratch'"
----@returns function(buffer: NuiBuffer): boolean
+---@param expected 'NuiSplit'|'NuiPopup'|'Scratch'
+---@return fun(buffer:RegexplainerBuffer):boolean
 local function is_buftype(expected)
   return function(buffer)
     local passed, classname = pcall(get_class_name, buffer)
@@ -79,13 +79,13 @@ function M.get_buffer(options)
   return buffer
 end
 
----@param buffer RegexplainerBuffer
+---@param buffer     RegexplainerBuffer
 ---@param renderer   RegexplainerRenderer
 ---@param options    RegexplainerRenderOptions
 ---@param components RegexplainerComponent[]
 ---@param state      RegexplainerRendererState
 --
-function M.render(buffer, renderer, options, components, state)
+function M.render(buffer, renderer, components, options, state)
   state.last = last
   local lines = renderer.get_lines(components, options, state)
   buffer:init(lines, options, state)
@@ -169,18 +169,15 @@ function M.clear_timers()
 end
 
 ---Is it a popup buffer?
----@param buffer RegexplainerBuffer
----@return boolean
+---@type fun(buffer:RegexplainerBuffer):boolean
 M.is_popup = is_buftype('NuiPopup')
 
 ---Is it a split buffer?
----@param buffer RegexplainerBuffer
----@return boolean
+---@type fun(buffer:RegexplainerBuffer):boolean
 M.is_split = is_buftype('NuiSplit')
 
 ---Is it a scratch buffer?
----@param buffer RegexplainerBuffer
----@return boolean
+---@type fun(buffer:RegexplainerBuffer):boolean
 M.is_scratch = is_buftype('Scratch')
 
 return M

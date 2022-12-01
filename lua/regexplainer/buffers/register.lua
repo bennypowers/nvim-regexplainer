@@ -7,7 +7,7 @@ local M = {}
 ---ephemeral, invisible, unlisted
 ---
 ---@class ScratchBuffer
----@field _ NuiBufferOptions
+---@field _      NuiBufferOptions
 ---@field bufnr number
 local Scratch = setmetatable({
   super = nil

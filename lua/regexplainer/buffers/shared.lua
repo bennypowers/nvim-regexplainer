@@ -2,8 +2,10 @@ local M = {}
 
 ---@class RegexplainerBuffer: ScratchBuffer|NuiPopup|NuiSplit
 ---@field type       "NuiPopup"|"NuiSplit"|"Scratch"
----@field init       function(buf: RegexplainerBuffer, lines: string[], options: RegexplainerOptions, components: RegexplainerComponent[], state: RegexplainerRendererState): nil
----@field after      function(buf: RegexplainerBuffer, lines: string[], options: RegexplainerOptions, components: RegexplainerComponent[], state: RegexplainerRendererState): nil
+---@field init       fun(buf:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state: RegexplainerRendererState):nil
+---@field after      fun(buf:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state: RegexplainerRendererState):nil
+---@field winid      number
+---@field hide       fun():nil
 
 ---@class WindowOptions
 ---@field wrap         boolean
@@ -15,18 +17,18 @@ local M = {}
 ---@field modifiable   boolean
 
 ---@class NuiSplitBufferOptions: NuiBufferOptions
----@field relative "'editor'"|"'window'"
----@field position "'bottom'"|"'top'"
+---@field relative 'editor'|'window'
+---@field position 'bottom'|'top'
 ---@field size     string
 
 ---@class NuiBorderOptions
 ---@field padding number[]
----@field style   "'shadow'"|"'double'"
+---@field style   'shadow'|'double'
 
 ---@class NuiPopupBufferOptions: NuiBufferOptions
----@field relative "'cursor'"
+---@field relative 'cursor'
 ---@field position number
----@field size     number|table<"'width'"|"'height'", number>
+---@field size     number|table<'width'|'height', number>
 ---@field border   NuiBorderOptions
 
 ---@alias RegexplainerBufferOptions NuiSplitBufferOptions|NuiPopupBufferOptions

@@ -20,9 +20,9 @@ end
 
 --- Throttles a function on the leading edge. Automatically `schedule_wrap()`s.
 ---
---@param fn (function) Function to throttle
---@param timeout (number) Timeout in ms
---@returns (function, timer) throttled function and timer. Remember to call
+--@param fn function Function to throttle
+--@param timeout number Timeout in ms
+--@return (function,timer) throttled function and timer. Remember to call
 ---`timer:close()` at the end or you will leak memory!
 function M.throttle_leading(fn, ms)
   td_validate(fn, ms)

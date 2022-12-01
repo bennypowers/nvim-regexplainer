@@ -18,6 +18,7 @@ local function init(self, lines, _, state)
 
   local win_width = vim.api.nvim_win_get_width(state.last.parent.winnr)
 
+  ---@type number|string
   local width = 0
 
   for _, line in ipairs(lines) do

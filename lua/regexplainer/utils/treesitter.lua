@@ -40,7 +40,7 @@ end
 
 ---Enter a parent-language's regexp node which contains the embedded
 ---regexp grammar
----@param node TSNode parent-language regexp node.
+---@param node TreesitterNode
 local function enter_js_re_node(node)
   -- cribbed from get_node_at_cursor impl
   local parsers = require 'nvim-treesitter.parsers'
@@ -63,8 +63,8 @@ end
 ---Containers are regexp treesitter nodes which may contain leaf nodes like pattern_character.
 ---An example container is anonymous_capturing_group.
 --
----@param node TSNode regexp treesitter node
----@returns boolean
+---@param node TreesitterNode regexp treesitter node
+---@return boolean
 --
 function M.is_container(node)
   if node:child_count() == 0 then
@@ -155,7 +155,7 @@ end
 
 --- Using treesitter, find the current node at cursor, and traverse up to the
 --- document root to determine if we're on a regexp
----@returns any, string
+---@return any, string|nil
 --
 function M.get_regexp_pattern_at_cursor()
   local cursor_node = ts_utils.get_node_at_cursor()
