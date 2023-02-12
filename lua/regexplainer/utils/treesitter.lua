@@ -45,7 +45,7 @@ local function enter_js_re_node(node)
   -- cribbed from get_node_at_cursor impl
   local parsers = require 'nvim-treesitter.parsers'
   local root_lang_tree = parsers.get_parser(0)
-  local row, col = ts_utils.get_node_range(node)
+  local row, col = vim.treesitter.get_node_range(node)
 
   local root = ts_utils.get_root_for_position(row, col + 1--[[hack that works for js]] , root_lang_tree)
 
