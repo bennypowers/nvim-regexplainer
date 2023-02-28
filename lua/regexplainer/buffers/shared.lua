@@ -54,16 +54,14 @@ M.shared_options = {
 }
 
 function M.default_buffer_after(self, _, options, _, state)
-  local autocmd = require 'nui.utils.autocmd'
-  local event   = autocmd.event
-
   if options.auto then
-    autocmd.buf.define(state.last.parent.bufnr, {
-      event.BufHidden,
-      event.BufLeave,
-    }, function()
-      M.kill_buffer(self)
-    end)
+    vim.api.nvim_create_autocmd({ 'BufHidden', 'BufLeave' }, {
+      group = vim.api.nvim_create_augroup('regexplainer_buf_after', { clear = true }),
+      buffer = state.last.parent.bufnr,
+      callback = function()
+        M.kill_buffer(self)
+      end
+    })
   end
 end
 

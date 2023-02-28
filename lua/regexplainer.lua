@@ -168,11 +168,10 @@ function M.setup(config)
 
   -- setup autocommand
   if local_config.auto then
-    local pattern = vim.tbl_map(function(x) return '*.' .. x end, local_config.filetypes)
     vim.api.nvim_create_augroup(augroup_name, { clear = true })
     vim.api.nvim_create_autocmd('CursorMoved', {
       group = 'Regexplainer',
-      pattern = pattern,
+      pattern = vim.tbl_map(function(x) return '*.' .. x end, local_config.filetypes),
       callback = function()
         if not disable_auto then
           show_debounced_trailing()
@@ -182,23 +181,6 @@ function M.setup(config)
   else
     pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
   end
-end
-
---- **INTERNAL** for testing only
---
-function M.teardown()
-  local_config = vim.tbl_deep_extend('keep', {}, default_config)
-  buffers.clear_timers()
-  buffers.hide_all()
-  pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
-end
-
---- **INTERNAL** notify the component tree for the current regexp
---
-function M.debug_components()
-  ---@type any
-  local mode = 'debug'
-  show({ auto = false, display = 'split', mode = mode })
 end
 
 --- Hide any displayed regexplainer buffers
@@ -215,6 +197,22 @@ function M.toggle()
   else
     M.show()
   end
+end
+
+--- **INTERNAL** for testing only
+--
+function M.teardown()
+  local_config = vim.tbl_deep_extend('keep', {}, default_config)
+  buffers.clear_timers()
+  pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
+end
+
+--- **INTERNAL** notify the component tree for the current regexp
+--
+function M.debug_components()
+  ---@type any
+  local mode = 'debug'
+  show({ auto = false, display = 'split', mode = mode })
 end
 
 return M

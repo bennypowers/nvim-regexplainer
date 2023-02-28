@@ -61,8 +61,10 @@ function M.trim(s)
   return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
 end
 
+local test_buffers = {}
+
 function M.editfile(testfile)
-  vim.cmd("e " .. testfile)
+  vim.cmd("e! " .. testfile)
   assert.are.same(
     vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p"),
     vim.fn.fnamemodify(testfile, ":p")
@@ -91,12 +93,9 @@ function M.clear_test_state()
 
   -- Cleanup any remaining buffers
   for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    vim.cmd.bwipeout({ count = bufnr, bang = true })
+    vim.api.nvim_buf_delete(bufnr, { force = true })
   end
-
-  -- Create fresh window
-  vim.cmd.new()
-  vim.cmd.only({ bang = true })
+  assert(#vim.api.nvim_list_bufs() == 1, "Failed to properly clear buffers")
 
   assert(#vim.api.nvim_tabpage_list_wins(0) == 1, "Failed to properly clear tab")
   assert(vim.fn.getreg(M.register_name) == '', "Failed to properly clear register")
@@ -118,23 +117,22 @@ function M.assert_popup_text_at_row(row, expected)
 end
 
 function M.assert_string(regexp, expected, message)
-  local bufnr = vim.api.nvim_create_buf(true, true)
-  local buffers
+  local newbuf = vim.api.nvim_create_buf(true, true)
 
-  vim.api.nvim_buf_call(bufnr, function()
-    vim.bo.filetype = 'javascript'
-    vim.api.nvim_set_current_line(regexp)
-    vim.cmd [[:norm l]]
-    regexplainer.show()
-    buffers = M.wait_for_regexplainer_buffer()
-  end)
+  vim.opt_local.filetype = 'javascript'
+  vim.api.nvim_set_current_line(regexp)
 
-  local re_bufnr = buffers[1].bufnr
-  local lines = vim.api.nvim_buf_get_lines(re_bufnr, 0, vim.api.nvim_buf_line_count(re_bufnr), false);
-  local text = table.concat(lines, '\n')
+  local text = table.concat(vim.api.nvim_buf_get_lines(
+    M.wait_for_regexplainer_buffer(),
+    0,
+    -1,
+    false
+  ), '\n')
+
+  regexplainer.hide()
 
   -- Cleanup any remaining buffers
-  vim.api.nvim_buf_delete(bufnr, { force = true })
+  vim.api.nvim_buf_delete(newbuf, { force = true })
 
   return assert.are.same(expected, text, message)
 end
@@ -144,15 +142,15 @@ function M.sleep(n)
 end
 
 function M.wait_for_regexplainer_buffer()
-  local buffers = require 'regexplainer.buffers'.get_buffers()
+  local buffers = {}
   local count = 0
-  while not #buffers and count < 20 do
-    vim.cmd [[:norm l]]
+  repeat
+    vim.cmd.norm'l'
     regexplainer.show()
     count = count + 1
     buffers = require 'regexplainer.buffers'.get_buffers()
-  end
-  return buffers
+  until #buffers > 0 or count >= 20
+  return buffers[1].bufnr
 end
 
 function M.get_info_on_capture(id, name, node, metadata)
@@ -162,7 +160,7 @@ function M.get_info_on_capture(id, name, node, metadata)
     text = yes and text or nil,
     metadata = metadata,
     type = node:type(),
-    pos = table.pack(node:range())
+    pos = { node:range() }
   }
 end
 

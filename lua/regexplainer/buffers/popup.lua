@@ -34,18 +34,12 @@ local function init(self, lines, _, state)
   self:set_size { width = width, height = #lines }
 end
 
-local function after(self, _, options, _)
-  local autocmd = require 'nui.utils.autocmd'
-  local event   = autocmd.event
-
+local function after(self, _, options, state)
   if options.auto then
-    self:on({
-      event.BufLeave,
-      event.BufWinLeave,
-      event.CursorMoved
-    }, function()
-      M.kill_buffer(self)
-    end, { once = true })
+    local function unmount() self:unmount() end
+    local bufnr = state.last.parent.bufnr
+    vim.api.nvim_create_autocmd('BufLeave', { buffer = bufnr, once = true, callback = unmount })
+    self:on({ 'BufLeave', 'BufWinLeave', 'CursorMoved' }, unmount, { once = true })
   end
 end
 
