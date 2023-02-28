@@ -98,8 +98,8 @@ end
 --
 function M.kill_buffer(buffer)
   if buffer then
-    pcall(function() buffer:hide() end)
-    pcall(function() buffer:unmount() end)
+    buffer:hide()
+    buffer:unmount()
     for i, buf in ipairs(all_buffers) do
       if buf == buffer then
         table.remove(all_buffers, i)
@@ -125,9 +125,9 @@ end
 function M.hide_all()
   for _, buffer in ipairs(all_buffers) do
     M.kill_buffer(buffer)
-    last.split = nil
-    last.popup = nil
   end
+  last.split = nil
+  last.popup = nil
 end
 
 --- Notify regarding all known Regexplainer buffers

@@ -31,13 +31,13 @@ end
 
 ---@param buffer RegexplainerBuffer
 ---@param lines  string[]
----@return string
+---@return string[]
 function M.set_lines(buffer, lines)
   if buffers.is_scratch(buffer) then
     vim.api.nvim_buf_set_lines(buffer.bufnr, 0, #lines, false, lines)
-  else
+  elseif buffer.winid then
     vim.api.nvim_win_call(buffer.winid, function()
-      vim.lsp.util.stylize_markdown(buffer.bufnr, lines)
+      vim.lsp.util.stylize_markdown(buffer.bufnr, lines, {})
     end)
   end
   return lines
