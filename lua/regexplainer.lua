@@ -3,6 +3,7 @@ local tree      = require 'regexplainer.utils.treesitter'
 local utils     = require 'regexplainer.utils'
 local buffers   = require 'regexplainer.buffers'
 local defer     = require 'regexplainer.utils.defer'
+local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
 
 ---@class RegexplainerMappings
 ---@field show?       string      # shows regexplainer
@@ -108,7 +109,7 @@ local function show(options)
     end
 
     buffers.render(buffer, renderer, components, options, {
-      full_regexp_text = vim.treesitter.query.get_node_text(node, 0),
+      full_regexp_text = get_node_text(node, 0),
     })
   else
     buffers.hide_all()

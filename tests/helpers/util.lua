@@ -1,7 +1,7 @@
 local regexplainer = require 'regexplainer'
 local parsers = require "nvim-treesitter.parsers"
 
-local get_node_text = vim.treesitter.query.get_node_text
+local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
 
 ---@diagnostic disable-next-line: unused-local
 local log = require 'regexplainer.utils'.debug

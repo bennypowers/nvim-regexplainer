@@ -4,7 +4,7 @@ local node_pred = require 'regexplainer.utils.treesitter'
 ---@diagnostic disable-next-line: unused-local
 local log = require 'regexplainer.utils'.debug
 
-local get_node_text = vim.treesitter.query.get_node_text
+local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
 
 ---@class RegexplainerBaseComponent
 ---@field type            RegexplainerComponentType # Which type of component
