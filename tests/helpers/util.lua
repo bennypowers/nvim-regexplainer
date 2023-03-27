@@ -1,7 +1,7 @@
 local regexplainer = require 'regexplainer'
 local parsers = require "nvim-treesitter.parsers"
 
-local get_node_text = vim.treesitter.query.get_node_text
+local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
 
 ---@diagnostic disable-next-line: unused-local
 local log = require 'regexplainer.utils'.debug
@@ -15,7 +15,8 @@ M.register_name = 'test'
 -- from the line above the regexp, but that also proved difficult
 -- so, at long last, we do some sring manipulation
 
-local query_js = vim.treesitter.query.parse_query('javascript', [[
+local parse_query = vim.treesitter.query.parse or vim.treesitter.query.parse_query
+local query_js = parse_query('javascript', [[
   (comment) @comment
   (expression_statement
     (regex)) @expr

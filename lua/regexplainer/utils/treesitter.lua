@@ -4,7 +4,7 @@ local M = {}
 
 local GUARD_MAX = 1000
 
-local get_node_text = vim.treesitter.query.get_node_text
+local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
 
 local node_types = {
   'alternation',
