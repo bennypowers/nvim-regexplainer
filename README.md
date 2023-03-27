@@ -1,13 +1,13 @@
 # nvim-regexplainer
 
-![Lua](https://img.shields.io/badge/Made%20with%20Lua-blueviolet.svg?style=for-the-badge&logo=lua)
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/bennypowers/nvim-regexplainer/main?style=for-the-badge)
+![Lua][made-with-lua]
+![GitHub Workflow Status][build-status]
 
 Describe the regular expression under the cursor.
 
 https://user-images.githubusercontent.com/1466420/156946492-a05600dc-0a5b-49e6-9ad2-417a403909a8.mov
 
-Heavily inspired by the venerable [atom-regexp-railroad](https://github.com/klorenz/atom-regex-railroad-diagrams/).
+Heavily inspired by the venerable [atom-regexp-railroad][atom-regexp-railroad].
 
 > 👉 **NOTE**: Requires Neovim 0.7 👈
 
@@ -22,7 +22,9 @@ use { 'bennypowers/nvim-regexplainer',
       } }
 ```
 
-You need to install `regex` with `nvim-treesitter`, as well as the grammar for whichever host language you're using. So for example if you wish to use Regexplainer with TypeScript sources, you need to do this:
+You need to install `regex` with `nvim-treesitter`, as well as the grammar for 
+whichever host language you're using. So for example if you wish to use 
+Regexplainer with TypeScript sources, you need to do this:
 
 ```vimscript
 :TSInstall regex typescript
@@ -84,21 +86,20 @@ The window will be reused, and has the filetype `Regexplainer`
 
 #### Popup Below Cursor
 
-Set to `popup` (the default) to display the explainer in a popup below the cursor.
-When the cursor moves, the popup closes. if `auto` is set, the popup will automatically display
-whenever the cursor moves inside a regular expression
-
+Set to `popup` (the default) to display the explainer in a popup below the 
+cursor. When the cursor moves, the popup closes. if `auto` is set, the popup 
+will automatically display whenever the cursor moves inside a regular expression
 You can call `show` with your own display type to override your config
 
 ```lua
 require'regexplainer'.show { display = 'split' }
 ```
 
-Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`.
+Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`. 
 `RegexplainerHide` and `RegexplainerToggle` are also available.
 
 You can customize the popup window by specifying `options.popup.border`,
-which is a table of [popup options from nui](https://github.com/MunifTanjim/nui.nvim/tree/main/lua/nui/popup#border).
+which is a table of [popup options from nui][popup-options].
 Any options specified for `options.popup` will also override the defaults.
 
 ```lua
@@ -113,14 +114,15 @@ require'regexplainer'.show {
 }
 ```
 
-You could use this to, for example, set a different border based on the state of your editor.
+You could use this to, for example, set a different border based on the state of 
+your editor.
 
 ### Render Options
 
-`narrative.separator` can also be a function taking the current component and
-returning a string clause separator. For example, to separate clauses by a new line, 
-followed by `> ` for each level of capture-group depth, define the following
-function:
+`narrative.separator` can also be a function taking the current component and 
+returning a string clause separator. For example, to separate clauses by a new 
+line, followed by `> ` for each level of capture-group depth, define the 
+following function:
 
 ```lua
 narrative = {
@@ -136,14 +138,15 @@ narrative = {
 },
 ```
 
-Input: 
-```js
+Input:
+
+```javascript
 /zero(one(two(?<inner>three)))/;
 ```
 
 Output: 
 
-```md
+```markdown
 `zero`  
 capture group 1:  
 > `one`  
@@ -157,10 +160,9 @@ capture group 1:
 You can yank the regexplanation into any register with the `yank` function. The 
 default register is `"`. This can be useful if you'd like to share the 
 explanation of a regexp with your teammates, or if you'd like to report a 
-mistake in regexplainer.
-The argument to `yank` is either a string (the register to yank to) or a table 
-with `register: string` and options to `show` (e.g. `mode = 'narrative', 
-narrative = {}`, etc.).
+mistake in regexplainer. The argument to `yank` is either a string (the register 
+to yank to) or a table with `register: string` and options to `show` (e.g. `mode 
+= 'narrative', narrative = {}`, etc.).
 
 For example, to copy the regexplanation to your system clipboard, use either of 
 these:
@@ -181,21 +183,27 @@ You can also use the command `RegexplainerYank`
 
 ## A Note about Lookbehinds
 
-While https://github.com/tree-sitter/tree-sitter-regex/issues/13 is still open, lookbehind
-support is partial, and results may not be accurate, especially if the term in the lookbehind
-is complex, e.g. 
+While https://github.com/tree-sitter/tree-sitter-regex/issues/13 is still open, 
+lookbehind support is partial, and results may not be accurate, especially if 
+the term in the lookbehind is complex, e.g. 
 
-```js
+```javascript
 /(?<!http|https:\/\/)www\.regex101\.com/;
 ```
 
 ## 🗃️  TODO list
-- [ ] Display Regexp [railroad diagrams](https://github.com/tabatkins/railroad-diagrams/)
-  using ASCII-art
-- [ ] Display Regexp [railroad diagrams](https://github.com/tabatkins/railroad-diagrams/)
-  via [hologram](https://github.com/edluffy/hologram.nvim)
-  and [kitty image protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/)
+- [ ] Display Regexp [railroad diagrams][railroad-diagrams] using ASCII-art
+- [ ] Display Regexp [railroad diagrams][railroad-diagrams] via 
+  [hologram][hologram] and [kitty image protocol][kitty], maybe with a sixel 
+  fallback
 - [ ] online documentation
 - [x] some unit tests or something, i guess
 
 
+[made-with-lua]: https://img.shields.io/badge/Made%20with%20Lua-blueviolet.svg?style=for-the-badge&logo=lua
+[build-status]: https://img.shields.io/github/actions/workflow/status/bennypowers/nvim-regexplainer/main.yml?branch=main&label=tests&style=for-the-badge
+[atom-regexp-railroad]: https://github.com/klorenz/atom-regex-railroad-diagrams/
+[popup-options]: https://github.com/MunifTanjim/nui.nvim/tree/main/lua/nui/popup#border
+[railroad-diagrams]: https://github.com/tabatkins/railroad-diagrams/
+[hologram]: https://github.com/edluffy/hologram.nvim
+[kitty]: https://sw.kovidgoyal.net/kitty/graphics-protocol/
