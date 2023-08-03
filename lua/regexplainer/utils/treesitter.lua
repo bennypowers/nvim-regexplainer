@@ -17,8 +17,7 @@ local node_types = {
   'document',
   'group_name',
   'identity_escape',
-  'lookahead_assertion',
-  'lookbehind_assertion',
+  'lookaround_assertion',
   'named_capturing_group',
   'non_capturing_group',
   'one_or_more',
@@ -74,8 +73,7 @@ function M.is_container(node)
     return type == 'anonymous_capturing_group'
         or type == 'alternation'
         or type == 'character_class'
-        or type == 'lookahead_assertion'
-        or type == 'lookbehind_assertion'
+        or type == 'lookaround_assertion'
         or type == 'named_capturing_group'
         or type == 'non_capturing_group'
         or type == 'pattern'
@@ -135,15 +133,9 @@ function M.is_upwards_stop(node)
   return node and node:type() == 'pattern' or M.is_document(node)
 end
 
--- Is it a lookahead or lookbehind assertion?
-function M.is_look_assertion(node)
-  ---@see https://github.com/tree-sitter/tree-sitter-regex/issues/13
-  if node:type() == 'ERROR' then
-    local text = get_node_text(node, 0)
-    return text:match [[^%(%<]]
-  else
-    return require 'regexplainer.component'.is_look_assertion { type = node:type() }
-  end
+-- Is it a lookaround assertion?
+function M.is_lookaround_assertion(node)
+  return require 'regexplainer.component'.is_lookaround_assertion { type = node:type() }
 end
 
 function M.is_modifier(node)

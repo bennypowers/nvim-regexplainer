@@ -15,7 +15,8 @@ local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_n
 ---@field zero_or_more?   boolean                   # a regexp component marked with `*`
 ---@field one_or_more?    boolean                   # a regexp component marked with `+`
 ---@field lazy?           boolean                   # a regexp quantifier component marked with `?`
----@field negative?       boolean                   # when it's a negative lookbehind
+---@field negative?       boolean                   # when it's a negative lookaround
+---@field direction?      'ahead'|'behind'          # when it's a lookaround, is it a lookahead or a lookbehind
 ---@field error?          any                       # parsing error
 
 ---@class RegexplainerParentComponent               : RegexplainerBaseComponent
@@ -34,7 +35,7 @@ local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_n
 ---| 'control_escape',
 ---| 'decimal_escape',
 ---| 'identity_escape',
----| 'lookahead_assertion'
+---| 'lookaround_assertion'
 ---| 'pattern'
 ---| 'pattern_character'
 ---| 'term'
@@ -55,7 +56,7 @@ local component_types = {
   'control_escape',
   'decimal_escape',
   'identity_escape',
-  'lookahead_assertion',
+  'lookaround_assertion',
   'pattern',
   'pattern_character',
   'term',
@@ -113,9 +114,17 @@ end
 ---@param component RegexplainerComponent
 ---@return boolean
 --
-function M.is_look_assertion(component)
-  return component.type:find('^look%a+_assertion') ~= nil
+function M.is_lookaround_assertion(component)
+  return component.type:find('^lookaround_assertion') ~= nil
 end
+
+---@param component RegexplainerComponent
+---@return boolean
+--
+function M.is_lookbehind_assertion(component)
+  return component.type:find('^lookaround_assertion') ~= nil
+end
+
 
 -- Does a container component contain nothing by pattern_characters?
 ---@param component RegexplainerComponent
@@ -370,11 +379,12 @@ function M.make_components(node, parent, root_regex_node)
             end
           end
 
-          if node_pred.is_look_assertion(child) then
-            local _, _, sign   = string.find(text, '%(%?<?([=!])')
+          if node_pred.is_lookaround_assertion(child) then
+            local _, _, behind, sign   = string.find(text, '%(%?(<?)([=!])')
             component.type     = type
             component.negative = sign == '!'
             component.depth    = (parent and parent.depth or 0) + 1
+            component.direction = behind == '<' and 'behind' or 'ahead'
           end
 
           -- once state has been set above, process the children
