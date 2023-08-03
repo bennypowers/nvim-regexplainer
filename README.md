@@ -182,16 +182,6 @@ You can also use the command `RegexplainerYank`
 :RegexplainerYank +
 ```
 
-## A Note about Lookbehinds
-
-While https://github.com/tree-sitter/tree-sitter-regex/issues/13 is still open, 
-lookbehind support is partial, and results may not be accurate, especially if 
-the term in the lookbehind is complex, e.g. 
-
-```javascript
-/(?<!http|https:\/\/)www\.regex101\.com/;
-```
-
 ## 🗃️  TODO list
 - [ ] Display Regexp [railroad diagrams][railroad-diagrams] using ASCII-art
 - [ ] Display Regexp [railroad diagrams][railroad-diagrams] via 
