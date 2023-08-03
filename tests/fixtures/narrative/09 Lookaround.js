@@ -37,10 +37,6 @@
 /@(?=g(?:raph)?ql)@/;
 
 /**
- * ⚠️ **Lookbehinds are poorly supported**
- * ⚠️ results may not be accurate
- * ⚠️ See https://github.com/tree-sitter/tree-sitter-regex/issues/13
- *
  * **preceeding **:
  *   `it's the `
  * `attack of the killer tomatos`
@@ -48,12 +44,7 @@
 /(?<=it's the )attack of the killer tomatos/;
 
 /**
- * ⚠️ **Lookbehinds are poorly supported**
- * ⚠️ results may not be accurate
- * ⚠️ See https://github.com/tree-sitter/tree-sitter-regex/issues/13
- *
- * `x`
- * **NOT preceeding **:
+ * `x` **NOT preceeding **:
  *   `u`
  * `@`
  */
@@ -65,10 +56,6 @@
 
 
 /**
- * ⚠️ **Lookbehinds are poorly supported**
- * ⚠️ results may not be accurate
- * ⚠️ See https://github.com/tree-sitter/tree-sitter-regex/issues/13
- *
  * **preceeding **:
  *   `g`
  * `\``
@@ -79,10 +66,6 @@
 /(?<=g)`(.*)`/mg;
 
 /**
- * ⚠️ **Lookbehinds are poorly supported**
- * ⚠️ results may not be accurate
- * ⚠️ See https://github.com/tree-sitter/tree-sitter-regex/issues/13
- *
  * **preceeding **:
  *   `g`
  *   non-capturing group (_optional_):
