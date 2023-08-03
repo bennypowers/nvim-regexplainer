@@ -53,7 +53,7 @@ function M.setup()
     parser_install_dir = parser_install_dir,
   }
 
-  vim.cmd('TSInstallSync ' .. table.concat(langs, ' '))
+  vim.cmd('TSInstallSync! ' .. table.concat(langs, ' '))
 end
 
 M.setup()
