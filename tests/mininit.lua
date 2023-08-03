@@ -53,7 +53,11 @@ function M.setup()
     parser_install_dir = parser_install_dir,
   }
 
-  vim.cmd('TSInstallSync! ' .. table.concat(langs, ' '))
+  for _, lang in ipairs(langs) do
+    if not require'nvim-treesitter.parsers'.has_parser(lang) then
+      vim.cmd('TSInstallSync ' .. lang)
+    end
+  end
 end
 
 M.setup()
