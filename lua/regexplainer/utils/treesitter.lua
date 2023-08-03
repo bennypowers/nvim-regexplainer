@@ -134,13 +134,13 @@ function M.is_upwards_stop(node)
 end
 
 -- Is it a lookaround assertion?
-function M.is_look_assertion(node)
+function M.is_lookaround_assertion(node)
   ---@see https://github.com/tree-sitter/tree-sitter-regex/issues/13
   if node:type() == 'ERROR' then
     local text = get_node_text(node, 0)
     return text:match [[^%(%<]]
   else
-    return require 'regexplainer.component'.is_look_assertion { type = node:type() }
+    return require 'regexplainer.component'.is_lookaround_assertion { type = node:type() }
   end
 end
 

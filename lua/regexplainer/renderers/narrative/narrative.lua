@@ -189,13 +189,13 @@ local function get_narrative_clause(component, options, state)
 
   end
 
-  if comp.is_look_assertion(component) then
-    if component.type == 'lookbehind_assertion' then
+  if comp.is_lookaround_assertion(component) then
+    if comp.is_lookbehind_assersion(component) then
       state.lookbehind_found = true
     end
 
     local negation = component.negative and 'NOT ' or ''
-    local direction = comp.is_lookahead_assertion(component) and 'followed by' or 'preceeding'
+    local direction = comp.is_lookaround_assertion(component) and 'followed by' or 'preceeding'
     prefix = '**' .. negation .. direction .. ' ' .. '**'
 
     local sublines, sep = get_sublines(component, options, state)
@@ -209,7 +209,7 @@ local function get_narrative_clause(component, options, state)
   end
 
   if not comp.is_capture_group(component)
-      and not comp.is_look_assertion(component) then
+      and not comp.is_lookaround_assertion(component) then
     suffix = get_suffix(component)
   end
 
@@ -249,7 +249,7 @@ function M.recurse(components, options, state)
         last = last,
       }))
 
-    if comp.is_lookahead_assertion(component) then
+    if comp.is_lookaround_assertion(component) then
       if not clauses[#clauses] then
         table.insert(clauses, next_clause)
       else

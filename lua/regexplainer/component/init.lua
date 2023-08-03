@@ -370,7 +370,7 @@ function M.make_components(node, parent, root_regex_node)
             end
           end
 
-          if node_pred.is_look_assertion(child) then
+          if node_pred.is_lookaround_assertion(child) then
             local _, _, sign   = string.find(text, '%(%?<?([=!])')
             component.type     = type
             component.negative = sign == '!'
