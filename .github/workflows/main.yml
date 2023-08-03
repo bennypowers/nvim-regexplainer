@@ -23,12 +23,6 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
-      - name: Install Packages
-        run: |
-          git clone --depth 1 https://github.com/nvim-lua/plenary.nvim           ~/.local/share/nvim/site/pack/vendor/start/plenary.nvim
-          git clone --depth 1 https://github.com/MunifTanjim/nui.nvim            ~/.local/share/nvim/site/pack/vendor/start/nui.nvim
-          git clone --depth 1 https://github.com/nvim-treesitter/nvim-treesitter ~/.local/share/nvim/site/pack/vendor/start/nvim-treesitter.nvim
-
       - name: Install Neovim
         uses: rhysd/action-setup-vim@v1
         with:
@@ -36,5 +30,5 @@ jobs:
           version: ${{ matrix.nvim-versions }}
 
       - name: Test
-        run: make ci
+        run: make test
 

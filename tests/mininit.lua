@@ -1,12 +1,55 @@
-vim.cmd([[
-  set rtp+=.
-  set noswapfile
-  filetype on
-  packloadall
-  runtime plugin/regexplainer.vim
-]])
+local M = {}
 
-local did, configs = pcall(require, 'nvim-treesitter.configs')
-if not did then print(configs) end
+function M.root(root)
+  local f = debug.getinfo(1, "S").source:sub(2)
+  return vim.fn.fnamemodify(f, ":p:h:h") .. "/" .. (root or "")
+end
 
-configs.setup {}
+---@param plugin string
+function M.load(plugin)
+  local name = plugin:match(".*/(.*)")
+  local package_root = M.root(".tests/site/pack/deps/start/")
+  if not vim.loop.fs_stat(package_root .. name) then
+    print("Installing " .. plugin)
+    vim.fn.mkdir(package_root, "p")
+    vim.fn.system({
+      "git",
+      "clone",
+      "--depth=1",
+      "https://github.com/" .. plugin .. ".git",
+      package_root .. "/" .. name,
+    })
+  end
+end
+
+function M.setup()
+  vim.cmd([[
+    set noswapfile
+    filetype on
+    set runtimepath=$VIMRUNTIME
+    runtime plugin/regexplainer.vim
+  ]])
+
+  vim.opt.runtimepath:append(M.root())
+  vim.opt.packpath = { M.root(".tests/site") }
+
+  M.load("MunifTanjim/nui.nvim")
+  M.load("nvim-lua/plenary.nvim")
+  M.load("nvim-treesitter/nvim-treesitter")
+
+  local parser_install_dir = M.root(".tests/share/treesitter");
+  vim.opt.runtimepath:append(parser_install_dir)
+
+  require 'nvim-treesitter.configs'.setup {
+    parser_install_dir = parser_install_dir,
+    ensure_installed = {
+      'html',
+      'javascript',
+      'typescript',
+      'regex',
+    },
+  }
+end
+
+M.setup()
+
