@@ -190,7 +190,7 @@ local function get_narrative_clause(component, options, state)
   end
 
   if comp.is_lookaround_assertion(component) then
-    if comp.is_lookbehind_assersion(component) then
+    if comp.is_lookbehind_assertion(component) then
       state.lookbehind_found = true
     end
 

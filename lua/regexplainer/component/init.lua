@@ -117,6 +117,15 @@ function M.is_lookaround_assertion(component)
   return component.type:find('^lookaround_assertion') ~= nil
 end
 
+---@param component RegexplainerComponent
+---@return boolean
+--
+function M.is_lookbehind_assertion(component)
+  print(vim.inspect(component))
+  return component.type:find('^lookaround_assertion') ~= nil
+end
+
+
 -- Does a container component contain nothing by pattern_characters?
 ---@param component RegexplainerComponent
 ---@return boolean
