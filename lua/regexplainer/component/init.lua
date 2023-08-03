@@ -15,7 +15,8 @@ local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_n
 ---@field zero_or_more?   boolean                   # a regexp component marked with `*`
 ---@field one_or_more?    boolean                   # a regexp component marked with `+`
 ---@field lazy?           boolean                   # a regexp quantifier component marked with `?`
----@field negative?       boolean                   # when it's a negative lookbehind
+---@field negative?       boolean                   # when it's a negative lookaround
+---@field direction?      'ahead'|'behind'          # when it's a lookaround, is it a lookahead or a lookbehind
 ---@field error?          any                       # parsing error
 
 ---@class RegexplainerParentComponent               : RegexplainerBaseComponent
@@ -121,7 +122,6 @@ end
 ---@return boolean
 --
 function M.is_lookbehind_assertion(component)
-  print(vim.inspect(component))
   return component.type:find('^lookaround_assertion') ~= nil
 end
 
@@ -380,10 +380,11 @@ function M.make_components(node, parent, root_regex_node)
           end
 
           if node_pred.is_lookaround_assertion(child) then
-            local _, _, sign   = string.find(text, '%(%?<?([=!])')
+            local _, _, behind, sign   = string.find(text, '%(%?(<?)([=!])')
             component.type     = type
             component.negative = sign == '!'
             component.depth    = (parent and parent.depth or 0) + 1
+            component.direction = behind == '<' and 'behind' or 'ahead'
           end
 
           -- once state has been set above, process the children

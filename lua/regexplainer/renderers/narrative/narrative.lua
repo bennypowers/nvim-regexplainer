@@ -190,12 +190,15 @@ local function get_narrative_clause(component, options, state)
   end
 
   if comp.is_lookaround_assertion(component) then
-    if comp.is_lookbehind_assertion(component) then
+    if comp.direction == 'behind' then
       state.lookbehind_found = true
     end
 
     local negation = component.negative and 'NOT ' or ''
-    local direction = comp.is_lookaround_assertion(component) and 'followed by' or 'preceeding'
+    local direction = 'followed by'
+    if component.direction == 'behind' then
+      direction = 'preceeding'
+    end
     prefix = '**' .. negation .. direction .. ' ' .. '**'
 
     local sublines, sep = get_sublines(component, options, state)

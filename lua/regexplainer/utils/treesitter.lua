@@ -135,13 +135,7 @@ end
 
 -- Is it a lookaround assertion?
 function M.is_lookaround_assertion(node)
-  ---@see https://github.com/tree-sitter/tree-sitter-regex/issues/13
-  if node:type() == 'ERROR' then
-    local text = get_node_text(node, 0)
-    return text:match [[^%(%<]]
-  else
-    return require 'regexplainer.component'.is_lookaround_assertion { type = node:type() }
-  end
+  return require 'regexplainer.component'.is_lookaround_assertion { type = node:type() }
 end
 
 function M.is_modifier(node)
