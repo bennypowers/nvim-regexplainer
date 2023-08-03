@@ -34,7 +34,7 @@ local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_n
 ---| 'control_escape',
 ---| 'decimal_escape',
 ---| 'identity_escape',
----| 'lookahead_assertion'
+---| 'lookaround_assertion'
 ---| 'pattern'
 ---| 'pattern_character'
 ---| 'term'
@@ -55,7 +55,7 @@ local component_types = {
   'control_escape',
   'decimal_escape',
   'identity_escape',
-  'lookahead_assertion',
+  'lookaround_assertion',
   'pattern',
   'pattern_character',
   'term',
@@ -113,8 +113,8 @@ end
 ---@param component RegexplainerComponent
 ---@return boolean
 --
-function M.is_look_assertion(component)
-  return component.type:find('^look%a+_assertion') ~= nil
+function M.is_lookaround_assertion(component)
+  return component.type:find('^lookaround_assertion') ~= nil
 end
 
 -- Does a container component contain nothing by pattern_characters?
