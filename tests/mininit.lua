@@ -22,6 +22,13 @@ function M.load(plugin)
   end
 end
 
+local langs = {
+  'html',
+  'javascript',
+  'typescript',
+  'regex',
+}
+
 function M.setup()
   vim.cmd([[
     set noswapfile
@@ -42,13 +49,10 @@ function M.setup()
 
   require 'nvim-treesitter.configs'.setup {
     parser_install_dir = parser_install_dir,
-    ensure_installed = {
-      'html',
-      'javascript',
-      'typescript',
-      'regex',
-    },
+    ensure_installed = langs,
   }
+
+  vim.cmd([[ TSInstallSync ]] .. table.concat(langs, ' '))
 end
 
 M.setup()
