@@ -2,6 +2,7 @@
 
 ![Lua][made-with-lua]
 ![GitHub Workflow Status][build-status]
+[![Number of users on dotfyle][dotfyle-badge]][dotfyle]
 
 Describe the regular expression under the cursor.
 
@@ -207,3 +208,5 @@ the term in the lookbehind is complex, e.g.
 [railroad-diagrams]: https://github.com/tabatkins/railroad-diagrams/
 [hologram]: https://github.com/edluffy/hologram.nvim
 [kitty]: https://sw.kovidgoyal.net/kitty/graphics-protocol/
+[dotfyle]: https://dotfyle.com/plugins/bennypowers/nvim-regexplainer
+[dotfyle-badge]: https://dotfyle.com/plugins/bennypowers/nvim-regexplainer/shield
