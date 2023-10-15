@@ -1,5 +1,3 @@
-local ts_utils = require 'nvim-treesitter.ts_utils'
-
 local M = {}
 
 local GUARD_MAX = 1000
@@ -31,28 +29,112 @@ local node_types = {
 }
 
 for _, type in ipairs(node_types) do
+  ---@type fun(node: TSNode): boolean
   M['is_' .. type] = function(node)
-    if not node then return false end
+    if not node then
+      return false
+    end
     return node and node:type() == type
   end
 end
 
----Enter a parent-language's regexp node which contains the embedded
----regexp grammar
----@param node TreesitterNode
-local function enter_js_re_node(node)
-  -- cribbed from get_node_at_cursor impl
-  local parsers = require 'nvim-treesitter.parsers'
-  local root_lang_tree = parsers.get_parser(0)
-  local row, col = vim.treesitter.get_node_range(node)
+-- Get previous node with same parent
+---@param node                   TSNode
+---@param allow_switch_parents?  boolean allow switching parents if first node
+---@param allow_previous_parent? boolean allow previous parent if first node and previous parent without children
+---@return TSNode?
+local function get_previous_node(node, allow_switch_parents, allow_previous_parent)
+  local destination_node ---@type TSNode?
+  local parent = node:parent()
+  if not parent then
+    return
+  end
 
-  local root = ts_utils.get_root_for_position(row, col + 1--[[hack that works for js]] , root_lang_tree)
+  local found_pos = 0
+  for i = 0, parent:named_child_count() - 1, 1 do
+    if parent:named_child(i) == node then
+      found_pos = i
+      break
+    end
+  end
+  if 0 < found_pos then
+    destination_node = parent:named_child(found_pos - 1)
+  elseif allow_switch_parents then
+    local previous_node = get_previous_node(node:parent())
+    if previous_node and previous_node:named_child_count() > 0 then
+      destination_node = previous_node:named_child(previous_node:named_child_count() - 1)
+    elseif previous_node and allow_previous_parent then
+      destination_node = previous_node
+    end
+  end
+  return destination_node
+end
+
+---@param node TSNode
+---@return TSNode?
+local function get_root_for_node(node)
+  ---@type TSNode?
+  local parent = node
+  local result = node
+
+  while parent ~= nil do
+    result = parent
+    parent = result:parent()
+  end
+
+  return result
+end
+
+---@param row number
+---@param col number
+---@param root_lang_tree LanguageTree
+---@return TSNode?
+local function get_root_for_position(row, col, root_lang_tree)
+  local lang_tree = root_lang_tree:language_for_range { row, col, row, col }
+
+  for _, tree in pairs(lang_tree:trees()) do
+    local root = tree:root()
+
+    if root and vim.treesitter.is_in_node_range(root, row, col) then
+      return root
+    end
+  end
+
+  return nil
+end
+
+---@param root_lang_tree LanguageTree
+---@return TSNode?
+local function get_node_at_cursor(root_lang_tree)
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local cursor_range = { cursor[1] - 1, cursor[2] }
+
+  ---@type TSNode?
+  local root = get_root_for_position(cursor_range[1], cursor_range[2], root_lang_tree)
 
   if not root then
-    root = ts_utils.get_root_for_node(node)
+    return
+  end
+
+  return root:named_descendant_for_range(cursor_range[1], cursor_range[2], cursor_range[1], cursor_range[2])
+end
+
+---Enter a parent-language's regexp node which contains the embedded
+---regexp grammar
+---@param root_lang_tree LanguageTree
+---@param node TSNode
+---@return TSNode?
+local function enter_js_re_node(root_lang_tree, node)
+  -- cribbed from get_node_at_cursor impl
+  local row, col = vim.treesitter.get_node_range(node)
+
+  local root = get_root_for_position(row, col + 1--[[hack that works for js]], root_lang_tree)
+
+  if not root then
+    root = get_root_for_node(node)
 
     if not root then
-      return nil, 'no node immediately to the right of the regexp node'
+      return nil
     end
   end
 
@@ -62,9 +144,8 @@ end
 ---Containers are regexp treesitter nodes which may contain leaf nodes like pattern_character.
 ---An example container is anonymous_capturing_group.
 --
----@param node TreesitterNode regexp treesitter node
+---@param node TSNode regexp treesitter node
 ---@return boolean
---
 function M.is_container(node)
   if node:child_count() == 0 then
     return false
@@ -102,7 +183,8 @@ function M.is_punctuation(type)
 end
 
 -- Is this the document root (or close enough for our purposes)?
---
+---@param node TSNode
+---@return boolean
 function M.is_document(node)
   if node == nil then return true else
     local type = node:type()
@@ -120,6 +202,8 @@ function M.is_document(node)
   end
 end
 
+---@param node TSNode
+---@return unknown
 function M.is_control_escape(node)
   return require 'regexplainer.component'.is_control_escape {
     type = node:type(),
@@ -150,7 +234,8 @@ end
 ---@return any, string|nil
 --
 function M.get_regexp_pattern_at_cursor()
-  local cursor_node = ts_utils.get_node_at_cursor()
+  local root_lang_tree = vim.treesitter.get_parser(0, vim.treesitter.language.get_lang(vim.bo[0].ft))
+  local cursor_node = get_node_at_cursor(root_lang_tree)
   local cursor_node_type = cursor_node and cursor_node:type()
   if not cursor_node or cursor_node_type == 'program' then
     return
@@ -180,7 +265,10 @@ function M.get_regexp_pattern_at_cursor()
         if type == 'pattern' then
           node = next
         elseif type == 'regex_pattern' or type == 'regex' then
-          node = enter_js_re_node(next)
+          node = enter_js_re_node(root_lang_tree, next)
+          if not node then
+            return nil, 'no node immediately to the right of the regexp node'
+          end
         end
       end
     end
@@ -196,9 +284,9 @@ function M.get_regexp_pattern_at_cursor()
     end
 
     local _node = node
-    node = ts_utils.get_previous_node(node, true, true)
+    node = get_previous_node(node, true, true)
     if not node then
-      node = ts_utils.get_root_for_node(_node)
+      node = get_root_for_node(_node)
       if not node then
         return nil, 'no upwards node'
       end
