@@ -1,4 +1,3 @@
-local ts_utils  = require 'nvim-treesitter.ts_utils'
 local node_pred = require 'regexplainer.utils.treesitter'
 
 ---@diagnostic disable-next-line: unused-local
@@ -202,9 +201,9 @@ end
 ---@alias TreesitterNode any
 
 --- Transform a treesitter node to a table of components which are easily rendered
----@param node            TreesitterNode
----@param parent?         TreesitterNode
----@param root_regex_node TreesitterNode
+---@param node            TSNode
+---@param parent?         TSNode
+---@param root_regex_node TSNode
 ---@return RegexplainerComponent[]
 --
 function M.make_components(node, parent, root_regex_node)
@@ -282,7 +281,7 @@ function M.make_components(node, parent, root_regex_node)
     elseif (type == 'identity_escape' or type == 'decimal_escape')
         and M.is_simple_pattern_character(previous) then
       if node_type ~= 'character_class'
-          and not node_pred.is_modifier(ts_utils.get_next_node(child)) then
+          and not node_pred.is_modifier(child:next_sibling()) then
         previous.text = previous.text .. child_text:gsub([[^\+]], '')
       else
         table.insert(components, {
