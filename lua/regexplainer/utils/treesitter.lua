@@ -233,8 +233,15 @@ end
 --- document root to determine if we're on a regexp
 ---@return any, string|nil
 --
-function M.get_regexp_pattern_at_cursor()
-  local root_lang_tree = vim.treesitter.get_parser(0, vim.treesitter.language.get_lang(vim.bo[0].ft))
+function M.get_regexp_pattern_at_cursor(filetypes)
+  local filetype = vim.bo[0].ft
+
+  -- if filetype is not in the list of filetypes, return early
+  if not vim.tbl_contains(filetypes, filetype) then
+    return nil, 'filetype not in options.filetypes'
+  end
+
+  local root_lang_tree = vim.treesitter.get_parser(0, vim.treesitter.language.get_lang(filetype))
   local cursor_node = get_node_at_cursor(root_lang_tree)
   local cursor_node_type = cursor_node and cursor_node:type()
   if not cursor_node or cursor_node_type == 'program' then

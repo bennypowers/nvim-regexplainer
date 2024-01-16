@@ -77,7 +77,7 @@ local local_config = vim.tbl_deep_extend('keep', default_config, {})
 --
 local function show(options)
   options = vim.tbl_deep_extend('force', local_config, options or {})
-  local node, error = tree.get_regexp_pattern_at_cursor()
+  local node, error = tree.get_regexp_pattern_at_cursor(options.filetypes)
 
   if error and options.debug then
     utils.notify('Rexexplainer: ' .. error, 'debug')
