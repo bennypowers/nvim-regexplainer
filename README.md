@@ -58,7 +58,7 @@ require'regexplainer'.setup {
   },
 
   -- Whether to log debug messages
-  debug = false, 
+  debug = false,
 
   -- 'split', 'popup'
   display = 'popup',
@@ -73,7 +73,7 @@ require'regexplainer'.setup {
   },
 
   narrative = {
-    separator = '\n',
+    indendation_string = '> ', -- default '  '
   },
 }
 ```
@@ -122,21 +122,13 @@ your editor.
 
 ### Render Options
 
-`narrative.separator` can also be a function taking the current component and 
-returning a string clause separator. For example, to separate clauses by a new 
-line, followed by `> ` for each level of capture-group depth, define the 
-following function:
+`narrative.indendation_string` can be a function taking the current component and 
+returning an indendation indicator string. For example, to show the capture group on each line:
 
 ```lua
 narrative = {
-  separator = function(component)
-    local sep = '\n';
-    if component.depth > 0 then
-      for _ = 1, component.depth do
-        sep = sep .. '> '
-      end
-    end
-    return sep
+  indentation_string = function(component)
+    return component.capture_depth .. '>  '
   end
 },
 ```
@@ -144,19 +136,19 @@ narrative = {
 Input:
 
 ```javascript
-/zero(one(two(?<inner>three)))/;
+/zero(one(two(three)))/;
 ```
 
 Output: 
 
 ```markdown
-`zero`  
-capture group 1:  
-> `one`  
-> capture group 2:  
-> > `two`  
-> > named capture group 3 `inner`:  
-> > > `three`
+`zero`
+capture group 1:
+1>  `one`
+1>  capture group 2:
+1>  2>  `two`
+1>  2>  capture group 3:
+1>  2>  3>  `three`
 ```
 
 ## Yank

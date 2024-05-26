@@ -1,6 +1,11 @@
 local Shared = require 'regexplainer.buffers.shared'
 local Split = require 'nui.split'
 
+local set_current_win = vim.api.nvim_set_current_win
+local set_current_buf = vim.api.nvim_set_current_buf
+local win_set_height = vim.api.nvim_win_set_height
+local extend = vim.tbl_deep_extend
+
 local M = {}
 
 ---@type NuiSplitBufferOptions
@@ -11,29 +16,20 @@ local split_defaults = {
 }
 
 local function after(self, lines, _, state)
-  vim.api.nvim_set_current_win(state.last.parent.winnr)
-  vim.api.nvim_set_current_buf(state.last.parent.bufnr)
-  vim.api.nvim_win_set_height(self.winid, #lines)
+  set_current_win(state.last.parent.winnr)
+  set_current_buf(state.last.parent.bufnr)
+  win_set_height(self.winid, #lines)
 end
 
 function M.get_buffer(options, state)
-  if state.last.split then
-    return state.last.split
+  if state.last.type == 'NuiSplit' then
+    return state.last
   end
-
-  local buffer = Split(vim.tbl_deep_extend('force',
-                                           Shared.shared_options,
-                                           split_defaults,
-                                           options.split or {}))
-
+  local buffer = Split(extend('force', Shared.shared_options, split_defaults, options.split or {}))
   buffer.type = 'NuiSplit'
-
-  state.last.split = buffer
-
+  state.last = buffer
   buffer.init = Shared.default_buffer_init
   buffer.after = after
-
-  vim.notify('split buf')
   return buffer
 end
 

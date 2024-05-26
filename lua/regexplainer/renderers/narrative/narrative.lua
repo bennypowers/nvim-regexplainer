@@ -1,280 +1,314 @@
-local descriptions = require 'regexplainer.component.descriptions'
-local comp         = require 'regexplainer.component'
-local utils        = require 'regexplainer.utils'
+local D = require'regexplainer.component.descriptions'
+local P = require'regexplainer.component.predicates'
+local U = require'regexplainer.utils'
 
----@diagnostic disable-next-line: unused-local
-local log = require 'regexplainer.utils'.debug
-
+local extend = function(a, b) return vim.tbl_extend('force', a, b) end
 
 local M = {}
 
 ---@class RegexplainerNarrativeRendererOptions
----@field separator string|fun(component:Component):string # clause separator
+---@field indentation_string string|fun(component:RegexplainerComponent):string # clause separator
 
 ---@class RegexplainerNarrativeRendererState : RegexplainerRendererState
----@field depth            number  # tracker for component depth
----@field lookbehind_found boolean # see https://github.com/tree-sitter/tree-sitter-regex/issues/13
 ---@field first            boolean # is it first in the term?
 ---@field last             boolean # is it last in the term?
+---@field parent           RegexplainerComponent the parent component
 
---- Get a suffix describing the component's quantifier, optionality, etc
+--- Get a description of the component's quantifier, optionality, etc
 ---@param component RegexplainerComponent
 ---@return string
 --
-local function get_suffix(component)
-  local suffix = ''
+local function get_quantifier(component)
+  local quant = ''
 
   if component.quantifier then
-    suffix = ' (_' .. component.quantifier .. '_)'
+    quant = ' (_' .. component.quantifier .. '_)'
   end
 
   if component.optional then
-    suffix = suffix .. ' (_optional_)'
+    quant = quant .. ' (_optional_)'
   elseif component.zero_or_more then
-    suffix = suffix .. ' (_>= 0x_)'
+    quant = quant .. ' (_>= 0x_)'
   elseif component.one_or_more then
-    suffix = suffix .. ' (_>= 1x_)'
+    quant = quant .. ' (_>= 1x_)'
   end
 
   if component.lazy then
-    suffix = suffix .. ' (_lazy_)'
+    quant = quant .. ' (_lazy_)'
   end
 
-  return suffix
+  return quant
 end
 
---- Get a title for a group component
----@param component RegexplainerComponent
----@return string
---
-local function get_group_heading(component)
-  local name = component.group_name and ('`' .. component.group_name .. '`') or ''
-  local header
-  if component.type == 'named_capturing_group' then
-    header = 'named capture group ' .. component.capture_group .. ' ' .. name
-  elseif component.type == 'non_capturing_group' then
-    header = 'non-capturing group '
-  else
-    header = 'capture group ' .. component.capture_group
-  end
-  return header:gsub(' $', '')
-
-end
-
----@param orig_sep  string                # the original configured separator string
 ---@param component RegexplainerComponent # component to render
+---@param options   RegexplainerOptions   # the original configured separator string
 ---@return string                         # the next separator string
-local function default_sep(orig_sep, component)
-  local sep = orig_sep;
-  if component.depth > 0 then
-
-    for _ = 1, component.depth do
-      sep = sep .. '  '
-    end
-  end
-  return sep
-end
-
---- Get all lines for a recursive component's children
----@param component RegexplainerComponent
----@param options   RegexplainerOptions
----@param state     RegexplainerNarrativeRendererState
----@return string[], string
---
-local function get_sublines(component, options, state)
-  local sep = options.narrative.separator
-
-  if type(options.narrative.separator) == "function" then
-    sep = options.narrative.separator(component)
+local function get_indent_string(component, options)
+  local indent = options.narrative.indentation_string
+  if component.type == 'pattern' or component.type == 'term' then
+    return ''
+  elseif type(indent) == "function" then
+    return indent(component)
   else
-    sep = default_sep(sep or '\n', component)
+    return indent
   end
-
-  local children = component.children
-  while (#children == 1 and (comp.is_term(children[1])
-      or comp.is_pattern(children[1]))) do
-    children = children[1].children
-  end
-
-  return M.recurse(children, options, vim.tbl_deep_extend('force', state, {
-    depth = (state.depth or 0) + 1,
-  })), sep
 end
 
---- Get a narrative clause for a component and all it's children
---- i.e. a single top-level narrative unit
+--- Get a description of the component's quantifier, optionality, etc
 ---@param component RegexplainerComponent
 ---@param options   RegexplainerOptions
 ---@param state     RegexplainerNarrativeRendererState
 ---@return string
 --
-local function get_narrative_clause(component, options, state)
+local function get_prefix(component, options, state)
   local prefix = ''
-  local infix = ''
-  local suffix = ''
 
   if state.first and not state.last then
     prefix = ''
-  elseif not state.depth and state.last and not state.first then
+  elseif state.last and not state.first then
     prefix = ''
   end
 
-  if comp.is_alternation(component) then
+  if P.is_alternation(component) then
+    prefix = 'Either '
+  end
+
+  if component.optional or component.quantifier then
+    prefix = prefix .. '\n'
+  end
+
+  return prefix
+end
+
+--- Get a suffix for the current clause
+---@param component RegexplainerComponent
+---@param options   RegexplainerOptions
+---@param state     RegexplainerNarrativeRendererState
+---@return string
+--
+local function get_suffix(component, options, state)
+  local suffix = ''
+  if not P.is_capture_group(component) and not P.is_lookaround_assertion(component) then
+    suffix = get_quantifier(component)
+  end
+  if component.zero_or_more or component.quantifier or component.one_or_more then
+    suffix = suffix .. '\n'
+  end
+  return suffix
+end
+
+---@param component RegexplainerComponent
+---@param options   RegexplainerOptions
+---@param state     RegexplainerNarrativeRendererState
+---@return string
+--
+local function get_infix(component, options, state)
+  if P.is_term(component) or P.is_pattern(component) then
+    if P.is_only_chars(component) then
+      return '`' .. component.text .. '`'
+    else
+      local sep = get_indent_string(component, options)
+      local line_sep = P.is_alternation(state.parent) and '' or '\n'
+      local sublines = M.recurse(component.children, options, state)
+      local contents = table.concat(sublines, '\n')
+      return ''
+        .. get_quantifier(component)
+        .. line_sep
+        .. string.rep(sep, component.capture_depth)
+        .. line_sep
+        .. contents
+        .. line_sep
+    end
+  end
+
+  if P.is_alternation(component) then
+    -- we have to do alternations by iterating instead of recursing
+    local infix = ''
     for i, child in ipairs(component.children) do
       local oxford = i == #component.children and 'or ' or ''
       local first_in_alt = i == 1
       local last_in_alt = i == #component.children
-      prefix = 'Either '
+      local next_state = extend(state, {
+        first = first_in_alt,
+        last = last_in_alt,
+        parent = component
+      })
       infix = infix
           .. (first_in_alt and '' or #component.children == 2 and ' ' or ', ')
           .. oxford
-          .. get_narrative_clause(child, options, vim.tbl_extend('force', state, {
-            first = first_in_alt,
-            last = last_in_alt,
-          }))
+          .. get_prefix(child, options, next_state)
+          .. get_infix(child, options, next_state)
+          .. get_suffix(child, options, next_state)
     end
+    return infix
   end
 
-  if comp.is_term(component) or comp.is_pattern(component) then
-    if comp.is_only_chars(component) then
-      infix = '`' .. component.text .. '`'
+  if P.is_capture_group(component) then
+    local indent = get_indent_string(component, options)
+    local sublines = M.recurse(component.children, options, extend(state, {
+      parent = component
+    }))
+    local contents = table.concat(sublines, '\n' .. indent)
+    local name = component.group_name and ('`' .. component.group_name .. '`') or ''
+    local header = ''
+    if component.type == 'named_capturing_group' then
+      header = 'named capture group ' .. component.capture_group .. ' ' .. name
+    elseif component.type == 'non_capturing_group' then
+      header = 'non-capturing group '
     else
-      for i, child in ipairs(component.children) do
+      header = 'capture group ' .. component.capture_group
+    end
+    header = header:gsub(' $', '')
+    return ''
+      .. header
+      .. get_quantifier(component)
+      .. ':\n'
+      .. indent
+      .. contents
+  end
 
-        local child_clause = get_narrative_clause(child, options, state)
-        if comp.is_capture_group(child) and comp.is_simple_pattern_character(component.children[i - 1]) then
-          infix = infix .. '\n' .. child_clause
-        else
-          infix = infix .. child_clause
-        end
-      end
+  if P.is_character_class(component) then
+    return '\n' .. D.describe_character_class(component)
+  end
+
+  if P.is_escape(component) then
+    if P.is_identity_escape(component) then
+      local text = component.text:sub(2)
+      if text == '' then text = component.text end
+      local escaped_text = U.escape_markdown(text)
+      if escaped_text == ' ' then escaped_text = '(space)' end
+      return '`' .. escaped_text .. '`'
+    elseif P.is_decimal_escape(component) then
+      return '`' .. D.describe_escape(component.text) .. '`'
+    else
+      return '**' .. D.describe_escape(component.text) .. '**'
     end
   end
 
-  if comp.is_pattern_character(component) then
-    infix = '`' .. utils.escape_markdown(component.text) .. '`'
+  if P.is_character_class_escape(component) then
+    return '**' .. D.describe_escape(component.text) .. '**'
   end
 
-  if comp.is_identity_escape(component)
-      or comp.is_decimal_escape(component) then
-    local escaped = component.text:gsub([[^\+]], '')
-    infix = '`' .. escaped .. '`'
-
-  elseif comp.is_special_character(component) then
-    infix = '**' .. utils.escape_markdown(descriptions.describe_character(component)) .. '**'
-
-  elseif comp.is_escape(component) then
-    local desc = descriptions.describe_escape(component.text)
-    infix = '**' .. desc .. '**'
+  if P.is_pattern_character(component) then
+    return '`' .. U.escape_markdown(component.text) .. '`'
   end
 
-  if comp.is_boundary_assertion(component) then
-    infix = '**WB**'
-  end
+  if P.is_lookaround_assertion(component) then
+    local indent = get_indent_string(component, options)
+    local sublines = M.recurse(component.children, options, extend(state, {
+      parent = component
+    }))
+    local contents = table.concat(sublines, '\n'..indent)
 
-  if comp.is_character_class(component) then
-    infix = descriptions.describe_character_class(component)
-  end
-
-  if comp.is_capture_group(component) then
-    local sublines, sep = get_sublines(component, options, state)
-    local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
-
-    infix = get_group_heading(component)
-        .. get_suffix(component)
-        .. ':'
-        .. sep
-        .. contents
-        .. '\n'
-
-  end
-
-  if comp.is_lookaround_assertion(component) then
-    if comp.direction == 'behind' then
-      state.lookbehind_found = true
-    end
-
-    local negation = component.negative and 'NOT ' or ''
+    local negation = (component.negative and 'NOT ' or '')
     local direction = 'followed by'
     if component.direction == 'behind' then
       direction = 'preceeding'
     end
-    prefix = '**' .. negation .. direction .. ' ' .. '**'
 
-    local sublines, sep = get_sublines(component, options, state)
-    local contents = table.concat(sublines, sep):gsub(sep .. '$', '')
-
-    infix = get_suffix(component)
-        .. ':'
-        .. sep
-        .. contents
-        .. '\n'
+    return ''
+      .. '**'
+      .. negation
+      .. direction
+      .. '**'
+      .. get_quantifier(component)
+      .. ':\n'
+      .. string.rep(indent, component.capture_depth)
+      .. contents
+      .. '\n'
   end
 
-  if not comp.is_capture_group(component)
-      and not comp.is_lookaround_assertion(component) then
-    suffix = get_suffix(component)
+  if P.is_special_character(component) then
+    local infix = ''
+    infix = infix .. '**' .. D.describe_character(component) .. '**'
+    if P.is_start_assertion(component) then
+      infix = infix .. '\n'
+    end
+    return infix
   end
 
-  local clause = prefix .. infix .. suffix
-
-  return clause
+  if P.is_boundary_assertion(component) then
+    return '**WB**'
+  end
 end
 
----@param components RegexplainerComponent[]
+---@param component RegexplainerComponent
+---@return nil|RegexplainerComponent error
+local function find_error(component)
+  local error
+  if component.type == 'ERROR' then
+    error = component
+  elseif component.children then
+    for _, child in ipairs(component.children) do
+      error = find_error(child)
+      if error then return error end
+    end
+  end
+  return error
+end
+
+local function get_error_message(error, state)
+  local lines = {}
+  lines[1] = '🚨 **Regexp contains an ERROR** at'
+  lines[2] = '`' .. state.full_regexp_text .. '`'
+  lines[3] = ' '
+  local error_start_col = error.error.position[2][1]
+  local from_re_start_to_err_start = error_start_col - error.error.start_offset + 1
+  for _ = 1, from_re_start_to_err_start do
+    lines[3] = lines[3] .. ' '
+  end
+  lines[3] = lines[3] .. '^'
+  return lines
+end
+
+local function is_non_empty(line)
+  return line ~= ''
+end
+
+local function split_lines(clause)
+  return vim.split(clause, '\n')
+end
+
+local function trim_end(str)
+  local s = str:gsub(' +$', '')
+  return s
+end
+
+---@param components (RegexplainerComponent)[]
 ---@param options    RegexplainerOptions
 ---@param state      RegexplainerNarrativeRendererState
+---@return string[] lines, RegexplainerNarrativeRendererState state
 function M.recurse(components, options, state)
-  state         = state or {}
   local clauses = {}
-  local lines   = {}
-
   for i, component in ipairs(components) do
     local first = i == 1
     local last = i == #components
-    if component.type == 'ERROR' then
-      lines[1] = '🚨 **Regexp contains an ERROR** at'
-      lines[2] = '`' .. state.full_regexp_text .. '`'
-      lines[3] = ' '
-      local error_start_col = component.error.position[2][1]
-      local from_re_start_to_err_start = error_start_col - component.error.start_offset + 1
-      for _ = 1, from_re_start_to_err_start do
-        lines[3] = lines[3] .. ' '
-      end
-      lines[3] = lines[3] .. '^'
-      return lines, state
+    local error = find_error(component)
+
+    if error then
+      return get_error_message(error, state), state
     end
 
-    local next_clause = get_narrative_clause(component,
-      options,
-      vim.tbl_extend('force', state, {
-        first = first,
-        last = last,
-      }))
+    local next_state = extend(state, {
+      first = first,
+      last = last,
+      parent = state.parent or { type = 'root' }
+    })
 
-    if comp.is_lookaround_assertion(component) then
-      if not clauses[#clauses] then
-        table.insert(clauses, next_clause)
-      else
-        clauses[#clauses] = clauses[#clauses] .. ' ' .. next_clause
-      end
-    else
-      table.insert(clauses, next_clause)
-    end
+    local clause = ''
+      .. get_prefix(component, options, next_state)
+      .. get_infix(component, options, next_state)
+      .. get_suffix(component, options, next_state)
+
+    table.insert(clauses, clause)
   end
 
-  local separator = options.narrative.separator
-  if type(separator) == "function" then
-    separator = separator({ type = 'root', depth = 0 })
-  end
-
-  local narrative = table.concat(clauses, separator)
-
-  for line in narrative:gmatch("([^\n]*)\n?") do
-    if #line > 0 then
-      table.insert(lines, line)
-    end
-  end
+  local lines = vim.iter(clauses)
+    :map(split_lines)
+    :flatten()
+    :filter(is_non_empty)
+    :map(trim_end)
+    :totable()
 
   return lines, state
 end

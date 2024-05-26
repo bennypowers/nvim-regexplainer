@@ -4,6 +4,7 @@
 
 ---@class RegexplainerRendererState
 ---@field full_regexp_text string  # caches the full regexp text.
+---@field last? RegexplainerBuffer
 
 ---@type table<string, RegexplainerRenderer>
 local M = {}
