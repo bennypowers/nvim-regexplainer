@@ -39,13 +39,13 @@ for _, type in ipairs(node_types) do
 end
 
 -- Get previous node with same parent
----@param node                   TSNode
+---@param node?                  TSNode
 ---@param allow_switch_parents?  boolean allow switching parents if first node
 ---@param allow_previous_parent? boolean allow previous parent if first node and previous parent without children
 ---@return TSNode?
 local function get_previous_node(node, allow_switch_parents, allow_previous_parent)
   local destination_node ---@type TSNode?
-  local parent = node:parent()
+  local parent = node and node:parent()
   if not parent then
     return
   end
@@ -60,7 +60,7 @@ local function get_previous_node(node, allow_switch_parents, allow_previous_pare
   if 0 < found_pos then
     destination_node = parent:named_child(found_pos - 1)
   elseif allow_switch_parents then
-    local previous_node = get_previous_node(node:parent())
+    local previous_node = get_previous_node(parent)
     if previous_node and previous_node:named_child_count() > 0 then
       destination_node = previous_node:named_child(previous_node:named_child_count() - 1)
     elseif previous_node and allow_previous_parent then
@@ -70,7 +70,7 @@ local function get_previous_node(node, allow_switch_parents, allow_previous_pare
   return destination_node
 end
 
----@param node TSNode
+---@param node? TSNode
 ---@return TSNode?
 local function get_root_for_node(node)
   ---@type TSNode?
@@ -87,7 +87,7 @@ end
 
 ---@param row number
 ---@param col number
----@param root_lang_tree LanguageTree
+---@param root_lang_tree vim.treesitter.LanguageTree
 ---@return TSNode?
 local function get_root_for_position(row, col, root_lang_tree)
   local lang_tree = root_lang_tree:language_for_range { row, col, row, col }
@@ -103,7 +103,7 @@ local function get_root_for_position(row, col, root_lang_tree)
   return nil
 end
 
----@param root_lang_tree LanguageTree
+---@param root_lang_tree vim.treesitter.LanguageTree
 ---@return TSNode?
 local function get_node_at_cursor(root_lang_tree)
   local cursor = vim.api.nvim_win_get_cursor(0)
@@ -121,7 +121,7 @@ end
 
 ---Enter a parent-language's regexp node which contains the embedded
 ---regexp grammar
----@param root_lang_tree LanguageTree
+---@param root_lang_tree vim.treesitter.LanguageTree
 ---@param node TSNode
 ---@return TSNode?
 local function enter_js_re_node(root_lang_tree, node)
@@ -183,7 +183,7 @@ function M.is_punctuation(type)
 end
 
 -- Is this the document root (or close enough for our purposes)?
----@param node TSNode
+---@param node? TSNode
 ---@return boolean
 function M.is_document(node)
   if node == nil then return true else
@@ -231,19 +231,25 @@ end
 
 --- Using treesitter, find the current node at cursor, and traverse up to the
 --- document root to determine if we're on a regexp
+---@param options RegexplainerOptions
 ---@return any, string|nil
 --
-function M.get_regexp_pattern_at_cursor()
-  local root_lang_tree = vim.treesitter.get_parser(0, vim.treesitter.language.get_lang(vim.bo[0].ft))
+function M.get_regexp_pattern_at_cursor(options)
+  local filetype = vim.bo[0].ft
+  if not vim.tbl_contains(options.filetypes, filetype) then
+    return nil, 'unrecognized filetype'
+  end
+  local root_lang_tree = vim.treesitter.get_parser(0, vim.treesitter.language.get_lang(filetype))
   local cursor_node = get_node_at_cursor(root_lang_tree)
   local cursor_node_type = cursor_node and cursor_node:type()
   if not cursor_node or cursor_node_type == 'program' then
     return
   end
 
+  ---@type TSNode?
   local node = cursor_node
 
-  if node:type() == 'regex' then
+  if node and node:type() == 'regex' then
     local iterator = node:iter_children()
 
     -- break if we enter an infinite loop (probably)

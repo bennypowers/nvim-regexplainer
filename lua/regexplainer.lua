@@ -3,7 +3,23 @@ local tree      = require 'regexplainer.utils.treesitter'
 local utils     = require 'regexplainer.utils'
 local buffers   = require 'regexplainer.buffers'
 local defer     = require 'regexplainer.utils.defer'
-local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
+
+---@class RegexplainerOptions
+---@field mode?             'narrative'                          # TODO: 'ascii', 'graphical'
+---@field auto?             boolean                              # Automatically display when cursor enters a regexp
+---@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
+---@field debug?            boolean                              # Notify debug logs
+---@field display?          'split'|'popup'
+---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind. Supports `which-key`
+---@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
+---@field popup?            NuiPopupBufferOptions                # options for the popup buffer
+---@field split?            NuiSplitBufferOptions                # options for the split buffer
+
+---@class RegexplainerRenderOptions : RegexplainerOptions
+---@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
+
+---@class RegexplainerYankOptions : RegexplainerOptions
+---@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 
 ---@class RegexplainerMappings
 ---@field show?       string      # shows regexplainer
@@ -12,6 +28,8 @@ local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_n
 ---@field yank?       string      # yanks regexplainer
 ---@field show_split? string      # shows regexplainer in a split window
 ---@field show_popup? string      # shows regexplainer in a popup window
+
+local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
 
 ---Maps config.mappings keys to vim command names and descriptions
 --
@@ -27,17 +45,7 @@ local config_command_map = {
 ---Augroup for auto = true
 local augroup_name = 'Regexplainer'
 
----@class RegexplainerOptions
----@field mode?             'narrative'                          # TODO: 'ascii', 'graphical'
----@field auto?             boolean                              # Automatically display when cursor enters a regexp
----@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
----@field debug?            boolean                              # Notify debug logs
----@field display?          'split'|'popup'
----@field mappings?         RegexplainerMappings                 # keymappings to automatically bind. Supports `which-key`
----@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
----@field popup?            NuiPopupBufferOptions                # options for the popup buffer
----@field split?            NuiSplitBufferOptions                # options for the split buffer
---
+---@type RegexplainerOptions
 local default_config = {
   mode = 'narrative',
   auto = false,
@@ -62,9 +70,6 @@ local default_config = {
   },
 }
 
----@class RegexplainerRenderOptions : RegexplainerOptions
----@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
-
 --- A deep copy of the default config.
 --- During setup(), any user-provided config will be folded in
 ---@type RegexplainerOptions
@@ -77,7 +82,7 @@ local local_config = vim.tbl_deep_extend('keep', default_config, {})
 --
 local function show(options)
   options = vim.tbl_deep_extend('force', local_config, options or {})
-  local node, error = tree.get_regexp_pattern_at_cursor()
+  local node, error = tree.get_regexp_pattern_at_cursor(options)
 
   if error and options.debug then
     utils.notify('Rexexplainer: ' .. error, 'debug')
@@ -89,7 +94,7 @@ local function show(options)
 
     ---@type RegexplainerRenderer
     local renderer
-    ---@type boolean, RexeplainerRenderer
+    ---@type boolean, RegexplainerRenderer
     local can_render, _renderer = pcall(require, 'regexplainer.renderers.' .. options.mode)
 
     if can_render then
@@ -105,7 +110,8 @@ local function show(options)
     local buffer = buffers.get_buffer(options)
 
     if not buffer and options.debug then
-      return require 'regexplainer.renderers.debug'.render(options, components)
+      local Debug = require 'regexplainer.renderers.debug'
+      return Debug.render(options, components)
     end
 
     buffers.render(buffer, renderer, components, options, {
@@ -132,9 +138,6 @@ function M.show(options)
   disable_auto = false
 end
 
----@class RegexplainerYankOptions
----@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
-
 --- Yank the explainer for the regexp under the cursor into a given register
 ---@param options? string|RegexplainerYankOptions
 function M.yank(options)
@@ -142,7 +145,11 @@ function M.yank(options)
   if type(options) == 'string' then
     options = { register = options }
   end
-  show(vim.tbl_deep_extend('force', options, { display = 'register' }))
+  show(vim.tbl_deep_extend(
+    'force',
+    options,
+    { display = 'register' }
+  ))
   disable_auto = false
 end
 
