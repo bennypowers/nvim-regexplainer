@@ -2,6 +2,10 @@ local Shared = require 'regexplainer.buffers.shared'
 
 local M = {}
 
+local au = vim.api.nvim_create_autocmd
+local get_win_width = vim.api.nvim_win_get_width
+local extend = vim.tbl_deep_extend
+
 ---@type NuiPopupBufferOptions
 local popup_defaults = {
   position = 2,
@@ -16,7 +20,7 @@ local popup_defaults = {
 local function init(self, lines, _, state)
   Shared.default_buffer_init(self)
 
-  local win_width = vim.api.nvim_win_get_width(state.last.parent.winnr)
+  local win_width = get_win_width(state.last.parent.winnr)
 
   ---@type number|string
   local width = 0
@@ -36,32 +40,24 @@ end
 
 local function after(self, _, options, state)
   if options.auto then
-    local function unmount() self:unmount() end
-    local bufnr = state.last.parent.bufnr
-    vim.api.nvim_create_autocmd('BufLeave', { buffer = bufnr, once = true, callback = unmount })
-    self:on({ 'BufLeave', 'BufWinLeave', 'CursorMoved' }, unmount, { once = true })
+    au({ 'BufLeave', 'BufWinLeave', 'CursorMoved' }, {
+      buffer = state.last.parent.bufnr,
+      once = true,
+      callback = function() self:unmount() end,
+    })
   end
 end
 
 function M.get_buffer(options, state)
-  if state.last.popup then
-    return state.last.popup
-  end
-
-  local Popup = require 'nui.popup'
-
-  local buffer = Popup(vim.tbl_deep_extend('force',
+  local Popup = require'nui.popup'
+  local buffer = Popup(extend('force',
     Shared.shared_options,
     popup_defaults, options.popup or {}
   ) or popup_defaults)
-
   buffer.type = 'NuiPopup'
-
-  state.last.popup = buffer
-
+  state.last = buffer
   buffer.init = init
   buffer.after = after
-
   return buffer
 end
 

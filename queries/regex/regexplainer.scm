@@ -1,0 +1,1 @@
+(pattern) @regexplainer.pattern

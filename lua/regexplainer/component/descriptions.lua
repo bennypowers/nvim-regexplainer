@@ -1,6 +1,6 @@
-local utils          = require 'regexplainer.utils'
-local component_pred = require 'regexplainer.component'
-local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
+local utils         = require 'regexplainer.utils'
+local Predicates    = require 'regexplainer.component.predicates'
+local get_node_text = vim.treesitter.get_node_text
 
 local M = {}
 
@@ -8,23 +8,23 @@ local M = {}
 ---@param quantifier_node TreesitterNode
 ---@return string
 --
-function M.describe_quantifier(quantifier_node)
+function M.describe_quantifier(quantifier_node, bufnr)
   -- TODO: there's probably a better way to do this
-  local text = get_node_text(quantifier_node, 0)
+  local text = get_node_text(quantifier_node, bufnr)
   if text:match ',' then
     local matches = {}
     for match in text:gmatch '%d+' do
       table.insert(matches, match)
     end
-    local min = matches[1]
-    local max = matches[2]
+    local min, max = unpack(matches)
     if max then
       return min .. '-' .. max .. 'x'
     else
       return '>= ' .. min .. 'x'
     end
   else
-    return text:match '%d+' .. 'x'
+    local match = text:match '%d+'
+    return match .. 'x'
   end
 end
 
@@ -40,9 +40,9 @@ function M.describe_character_class(component)
     local initial_sep = i == 1 and '' or ', '
     local text = utils.escape_markdown(child.text)
 
-    if component_pred.is_identity_escape(child) then
+    if Predicates.is_identity_escape(child) then
       text = '`' .. text:sub(-1) .. '`'
-    elseif component_pred.is_escape(child) then
+    elseif Predicates.is_escape(child) then
       text = '**' .. M.describe_escape(text) .. '**'
     else
       text = '`' .. text .. '`'
@@ -57,7 +57,7 @@ end
 ---@return string
 function M.describe_escape(escape)
   local char = escape:gsub([[\\]], [[\]]):sub(2)
-  if char == 'd' then return '0-9'
+      if char == 'd' then return '0-9'
   elseif char == 'n' then return 'LF'
   elseif char == 'r' then return 'CR'
   elseif char == 's' then return 'WS'

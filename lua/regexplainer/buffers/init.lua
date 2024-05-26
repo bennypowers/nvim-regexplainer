@@ -1,14 +1,9 @@
 local utils  = require 'regexplainer.utils'
 
-local all_buffers = {}
+local get_current_win = vim.api.nvim_get_current_win
+local get_current_buf = vim.api.nvim_get_current_buf
 
--- TODO: remove this, or only store the last parent,
--- push and pop from all_buffers instead
-local last = {
-  parent = nil,
-  split = nil,
-  popup = nil,
-}
+local all_buffers = {}
 
 ---@param object RegexplainerBuffer
 ---@returns 'NuiSplit'|'NuiPopup'|'Scratch'
@@ -42,6 +37,18 @@ local function close_timers()
   end
 end
 
+---@param options RegexplainerOptions
+---@return RegexplainerBuffer
+local function get_buffer(options, state)
+  if options.display == 'register' then
+    return require'regexplainer.buffers.register'.get_buffer(options, state)
+  elseif options.display == 'split' then
+    return require'regexplainer.buffers.split'.get_buffer(options, state)
+  else --if options.display == 'popup' then
+    return require'regexplainer.buffers.popup'.get_buffer(options, state)
+  end
+end
+
 -- Functions to create or modify the buffer which displays the regexplanation
 --
 local M = {}
@@ -53,27 +60,17 @@ local M = {}
 function M.get_buffer(options)
   options = options or {}
 
-  local buffer
-
   local state = {
-    last = last
+    last = M.get_last_buffer() or {},
   }
 
-  if options.display == 'register' then
-    buffer = require'regexplainer.buffers.register'.get_buffer(options, state)
-
-  elseif options.display == 'split' then
-    buffer = require'regexplainer.buffers.split'.get_buffer(options, state)
-
-  elseif options.display == 'popup' then
-    buffer = require'regexplainer.buffers.popup'.get_buffer(options, state)
-  end
+  local buffer = get_buffer(options, state)
 
   table.insert(all_buffers, buffer);
 
   state.last.parent = {
-    winnr = vim.api.nvim_get_current_win(),
-    bufnr = vim.api.nvim_get_current_buf(),
+    winnr = get_current_win(),
+    bufnr = get_current_buf(),
   }
 
   return buffer
@@ -86,7 +83,7 @@ end
 ---@param state      RegexplainerRendererState
 --
 function M.render(buffer, renderer, components, options, state)
-  state.last = last
+  state.last = state.last or M.get_last_buffer()
   local lines = renderer.get_lines(components, options, state)
   buffer:init(lines, options, state)
   renderer.set_lines(buffer, lines)
@@ -105,19 +102,13 @@ function M.kill_buffer(buffer)
         table.remove(all_buffers, i)
       end
     end
-    for _, key in ipairs({ 'popup', 'split' }) do
-      if last[key] == buffer then
-        last[key] = nil
-      end
-    end
   end
 end
 
 --- Hide the last-opened Regexplainer buffer
 --
 function M.hide_last()
-  M.kill_buffer(last.popup)
-  M.kill_buffer(last.split)
+  M.kill_buffer(M.get_last_buffer())
 end
 
 --- Hide all known Regexplainer buffers
@@ -126,8 +117,6 @@ function M.hide_all()
   for _, buffer in ipairs(all_buffers) do
     M.kill_buffer(buffer)
   end
-  last.split = nil
-  last.popup = nil
 end
 
 --- Notify regarding all known Regexplainer buffers
@@ -136,15 +125,22 @@ end
 --
 function M.debug_buffers()
   utils.notify(all_buffers)
-  utils.notify(last)
 end
 
 --- get all active regexplaine buffers
 --- **INTERNAL**: for debug purposes only
 ---@private
 --
-function M.get_buffers()
+function M.get_all_buffers()
   return all_buffers
+end
+
+--- get last active regexplainer buffer
+--- **INTERNAL**: for debug purposes only
+---@private
+--
+function M.get_last_buffer()
+  return all_buffers[#all_buffers]
 end
 
 --- Whether there are any open Regexplainer buffers

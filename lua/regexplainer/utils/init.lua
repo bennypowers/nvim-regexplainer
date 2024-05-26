@@ -38,4 +38,36 @@ function M.escape_markdown(str)
   return string.gsub(str, [==[([\_*`><])]==], [[\%1]])
 end
 
+local lookuptables = {}
+
+setmetatable(lookuptables, { __mode = "v" }) -- make values weak
+
+local function get_lookup(xs)
+  local key = type(xs) == 'string' and xs or table.concat(xs, '-')
+  if lookuptables[key] then return lookuptables[key]
+  else
+    local lookup = {}
+    for _, v in ipairs(xs) do lookup[v] = true end
+    lookuptables[key] = lookup
+    return lookup
+  end
+end
+
+--- Memoized `elem` predicate
+---@generic T
+---@param x  T   needle
+---@param xs T[] haystack
+--
+function M.elem(x, xs)
+  return get_lookup(xs)[x] or false
+end
+
+function M.get_cached(key)
+  return lookuptables[key]
+end
+
+function M.set_cached(key, table)
+  lookuptables[key] = table
+end
+
 return M
