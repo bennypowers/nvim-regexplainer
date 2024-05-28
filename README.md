@@ -193,4 +193,4 @@ You can also use the command `RegexplainerYank`
 [hologram]: https://github.com/edluffy/hologram.nvim
 [kitty]: https://sw.kovidgoyal.net/kitty/graphics-protocol/
 [dotfyle]: https://dotfyle.com/plugins/bennypowers/nvim-regexplainer
-[dotfyle-badge]: https://dotfyle.com/plugins/bennypowers/nvim-regexplainer/shield
+[dotfyle-badge]: https://dotfyle.com/plugins/bennypowers/nvim-regexplainer/shield?style=for-the-badge
