@@ -34,18 +34,19 @@ function M.setup()
     set noswapfile
     filetype on
     set runtimepath=$VIMRUNTIME
-    runtime plugin/regexplainer.vim
+    runtime plugin/regexplainer.lua
   ]])
 
-  vim.opt.runtimepath:append(M.root())
-  vim.opt.packpath = { M.root(".tests/site") }
-
-  M.load("MunifTanjim/nui.nvim")
-  M.load("nvim-lua/plenary.nvim")
-  M.load("nvim-treesitter/nvim-treesitter")
-
-  local parser_install_dir = M.root(".tests/share/treesitter");
+  local parser_install_dir = M.root'.tests/share/treesitter';
   vim.opt.runtimepath:append(parser_install_dir)
+  vim.opt.runtimepath:append(M.root())
+  vim.opt.runtimepath:append(M.root'tests')
+  vim.opt.packpath = { M.root'.tests/site' }
+
+  M.load'MunifTanjim/nui.nvim'
+  M.load'nvim-lua/plenary.nvim'
+  M.load'nvim-treesitter/nvim-treesitter'
+
 
   vim.cmd[[packloadall]]
 

@@ -1,33 +1,38 @@
 /**
- * `@` **followed by **:
+ * `@`
+ * **followed by**:
  *   `u`
  * `@`
  */
 /@(?=u)@/;
 
 /**
- * `@` **NOT followed by **:
+ * `@`
+ * **NOT followed by**:
  *   `u`
  * `@`
  */
 /@(?!u)@/;
 
 /**
- * `@` **followed by ** (_2-3x_):
+ * `@`
+ * **followed by** (_2-3x_):
  *   Either `up` or `down`
  * `@`
  */
 /@(?=up|down){2,3}@/;
 
 /**
- * `@` **NOT followed by **:
+ * `@`
+ * **NOT followed by**:
  *   One of **WORD**, or **WS**
  * `@`
  */
 /@(?![\w\s])@/;
 
 /**
- * `@` **followed by **:
+ * `@`
+ * **followed by**:
  *   `g`
  *   non-capturing group (_optional_):
  *     `raph`
@@ -37,14 +42,15 @@
 /@(?=g(?:raph)?ql)@/;
 
 /**
- * **preceeding **:
+ * **preceeding**:
  *   `it's the `
  * `attack of the killer tomatos`
  */
 /(?<=it's the )attack of the killer tomatos/;
 
 /**
- * `x` **NOT preceeding **:
+ * `x`
+ * **NOT preceeding**:
  *   `u`
  * `@`
  */
@@ -56,7 +62,7 @@
 
 
 /**
- * **preceeding **:
+ * **preceeding**:
  *   `g`
  * `\``
  * capture group 1:
@@ -66,7 +72,7 @@
 /(?<=g)`(.*)`/mg;
 
 /**
- * **preceeding **:
+ * **preceeding**:
  *   `g`
  *   non-capturing group (_optional_):
  *     `raph`

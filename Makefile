@@ -10,7 +10,7 @@ watch:
 		-type f \
 		-name '*.lua' \
 		-o -name '*.js' \
-		! -path "./.tests/**/*" | entr -d make run_tests
+		! -path "./.tests/**/*" | entr -d make test
 
 test:
 	@REGEXPLAINER_DEBOUNCE=false \
@@ -18,5 +18,5 @@ test:
 			--headless \
 			--noplugin \
 			-u tests/mininit.lua \
-			-c "lua require'plenary.test_harness'.test_directory('tests/regexplainer/', {minimal_init='tests/mininit.lua',sequential=true})"\
+			-c "PlenaryBustedDirectory tests/regexplainer/ {minimal_init='tests/mininit.lua',sequential=true,keep_going=false}"\
 			-c "qa!"
