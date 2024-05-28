@@ -1,9 +1,22 @@
-/** 
+/**
  * `@`
  * capture group 1:
  *   `hello`
  */
 /@(hello)/;
+
+/**
+ * capture group 1:
+ *   **0-9**
+ */
+/(\d)/;
+
+/**
+ * **WORD** (_>= 0x_)
+ * capture group 1:
+ *   **WORD**
+ */
+/\w*(\w)/;
 
 /**
  * `@`

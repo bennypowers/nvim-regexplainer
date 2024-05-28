@@ -1,7 +1,7 @@
 /**
  * `hello`
  * non-capturing group:
- *   Either `world` or `dolly`
+ *   `world`
  */
-/hello(?:world|dolly)/;
+/hello(?:world)/;
 

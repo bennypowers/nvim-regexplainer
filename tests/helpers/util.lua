@@ -1,27 +1,29 @@
 local regexplainer = require 'regexplainer'
+local buffers = require 'regexplainer.buffers'
 local parsers = require "nvim-treesitter.parsers"
 
-local get_node_text = vim.treesitter.get_node_text or vim.treesitter.query.get_node_text
+local get_parser = vim.treesitter.get_parser
+local get_node_text = vim.treesitter.get_node_text
+local bd = vim.api.nvim_buf_delete
 
----@diagnostic disable-next-line: unused-local
-local log = require 'regexplainer.utils'.debug
+local query = vim.treesitter.query.get('javascript', 'regexplainer_test')
+if not query then error('could not get query') end
 
-local M = {}
+local function trim(s)
+  return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
+end
 
-M.register_name = 'test'
+local function editfile(testfile)
+  vim.cmd("e! " .. testfile)
+  assert.are.same(
+    vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p"),
+    vim.fn.fnamemodify(testfile, ":p")
+  )
+end
 
--- NOTE: ideally, we'd query for the jsdoc description as an injected language, but
--- so far I've been unable to make that happen, after that, I tried querying the JSDoc tree
--- from the line above the regexp, but that also proved difficult
--- so, at long last, we do some sring manipulation
-
-local parse_query = vim.treesitter.query.parse or vim.treesitter.query.parse_query
-local query_js = parse_query('javascript', [[
-  (comment) @comment
-  (expression_statement
-    (regex)) @expr
-  ]])
-
+---Parse a JSDoc comment, returning the markdown description
+---@param comment string JSDoc comment, including /* */
+---@return string description JSDoc description, without /* * */
 local function get_expected_from_jsdoc(comment)
   local lines = {}
   for line in comment:gmatch("([^\n]*)\n?") do
@@ -33,51 +35,88 @@ local function get_expected_from_jsdoc(comment)
     table.insert(lines, clean)
   end
 
-  return M.trim(table.concat(lines, '\n'))
+  return trim(table.concat(lines, '\n'))
 end
 
+---Retrieve all the cases in a fixture file.
+---a case is a regexp expression with a JSDoc comment
+---containing the expected regexplainer narrative result
 local function get_cases()
   local results = {}
   local parser = parsers.get_parser(0)
   local tree = parser:parse()[1]
-
-  for id, node in query_js:iter_captures(tree:root(), 0) do
-    local name = query_js.captures[id] -- name of the capture in the query
-    local prev = node:prev_sibling()
-    if name == 'expr' and prev and prev:type() == 'comment' then
-      local text = get_node_text(node:named_child('pattern'), 0)
-      local expected = get_expected_from_jsdoc(get_node_text(prev, 0))
-      table.insert(results, {
-        text = text,
-        example = expected,
-        row = node:start(),
-      })
+  local next = {}
+  for id, node in query:iter_captures(tree:root(), 0) do
+    local name = query.captures[id] -- name of the capture in the query
+    if name == 'test.comment' then
+      local jsdoc_text = get_node_text(node, 0);
+      next.expected = get_expected_from_jsdoc(jsdoc_text)
+    elseif name == 'test.pattern' then
+      next.pattern = get_node_text(node, 0)
+      next.row = node:start() + 1
+    end
+    if next.row and next.expected and next.pattern then
+      table.insert(results, next)
+      next = {}
     end
   end
-
   return results
 end
 
-function M.trim(s)
-  return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
+---Cleanup any remaining buffers
+local function clear_buffers()
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    vim.api.nvim_buf_delete(bufnr, { force = true })
+  end
 end
 
-local test_buffers = {}
-
-function M.editfile(testfile)
-  vim.cmd("e! " .. testfile)
-  assert.are.same(
-    vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p"),
-    vim.fn.fnamemodify(testfile, ":p")
-  )
+---@param bufnr number
+---@return string text buffer text
+local function get_buffer_text(bufnr)
+  return table.concat(vim.api.nvim_buf_get_lines(bufnr, 0, -1, false), '\n')
 end
+
+---@param pattern string regexp pattern to test
+---@return number bufnr bufnr of test fixture buffer
+local function setup_test_buffer(pattern)
+  local newbuf = vim.api.nvim_create_buf(true, false)
+  vim.api.nvim_win_set_buf(0, newbuf)
+  vim.opt_local.filetype = 'javascript'
+  vim.api.nvim_set_current_line('/'..pattern..'/;')
+  vim.treesitter.start(newbuf, 'javascript')
+  return newbuf
+end
+
+local function show_and_get_regexplainer_buffer(bufnr)
+  local buffer
+  repeat
+    get_parser(0):parse()
+    vim.uv.sleep(1)
+    local row, col = unpack(vim.api.nvim_win_get_cursor(0));
+    vim.api.nvim_win_set_cursor(0, {row, col + 1})
+    local cursor_node = vim.treesitter.get_node()
+    if (cursor_node) then
+      for id, node in query:iter_captures(cursor_node, bufnr) do
+        if query[id] == 'test.pattern' and node then
+          local range = node:range()
+          vim.api.nvim_win_set_cursor(0, { range[0], range[1] })
+        end
+      end
+    end
+    regexplainer.show({debug = true})
+    buffer = buffers.get_last_buffer()
+  until buffer
+  return buffer.bufnr
+end
+
+local M = {}
+
+M.register_name = 'test'
 
 function M.iter_regexes_with_descriptions(filename)
-  M.editfile(filename)
+  editfile(filename)
   local cases = get_cases()
-
   local index = 0
-
   return function()
     index = index + 1
     if index <= #cases then
@@ -88,83 +127,24 @@ end
 
 function M.clear_test_state()
   vim.fn.setreg(M.register_name, '')
-
-  -- Clear regexplainer state
-  regexplainer.teardown()
-
-  -- Cleanup any remaining buffers
-  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    vim.api.nvim_buf_delete(bufnr, { force = true })
-  end
+  regexplainer.teardown() -- Clear regexplainer state
+  clear_buffers()
   assert(#vim.api.nvim_list_bufs() == 1, "Failed to properly clear buffers")
-
   assert(#vim.api.nvim_tabpage_list_wins(0) == 1, "Failed to properly clear tab")
   assert(vim.fn.getreg(M.register_name) == '', "Failed to properly clear register")
 end
 
-function M.assert_popup_text_at_row(row, expected)
-  M.editfile(assert:get_parameter('fixture_filename'))
-  local moved = pcall(vim.api.nvim_win_set_cursor, 0, { row, 1 })
-  while moved == false do
-    M.editfile(assert:get_parameter('fixture_filename'))
-  end
-  regexplainer.show()
-  M.wait_for_regexplainer_buffer()
-  local bufnr = require 'regexplainer.buffers'.get_buffers()[1].bufnr
-  local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false);
-  local text = table.concat(lines, '\n')
-  local regex = vim.api.nvim_buf_get_lines(0, 0, -1, false)[row]
-  return assert.are.same(expected, text, row .. ': ' .. regex)
-end
-
-function M.assert_string(regexp, expected, message)
-  local newbuf = vim.api.nvim_create_buf(true, true)
-
-  vim.opt_local.filetype = 'javascript'
-  vim.api.nvim_set_current_line(regexp)
-
-  local text = table.concat(vim.api.nvim_buf_get_lines(
-    M.wait_for_regexplainer_buffer(),
-    0,
-    -1,
-    false
-  ), '\n')
-
-  regexplainer.hide()
-
+---@param pattern string regexp pattern to test
+---@param expected string expected markdown output
+---@param message string test description
+function M.assert_string(pattern, expected, message)
+  local newbufnr = setup_test_buffer(pattern)
+  local rebufnr = show_and_get_regexplainer_buffer(newbufnr)
+  local text = get_buffer_text(rebufnr)
   -- Cleanup any remaining buffers
-  vim.api.nvim_buf_delete(newbuf, { force = true })
-
+  bd(newbufnr, { force = true })
+  regexplainer.hide()
   return assert.are.same(expected, text, message)
 end
-
-function M.sleep(n)
-  os.execute("sleep " .. tonumber(n))
-end
-
-function M.wait_for_regexplainer_buffer()
-  local buffers = {}
-  local count = 0
-  repeat
-    vim.cmd.norm'l'
-    regexplainer.show()
-    count = count + 1
-    buffers = require 'regexplainer.buffers'.get_buffers()
-  until #buffers > 0 or count >= 20
-  return buffers[1].bufnr
-end
-
-function M.get_info_on_capture(id, name, node, metadata)
-  local yes, text = pcall(get_node_text, node, 0)
-  return {
-    id, name,
-    text = yes and text or nil,
-    metadata = metadata,
-    type = node:type(),
-    pos = { node:range() }
-  }
-end
-
-M.dedent = require 'plenary.strings'.dedent
 
 return M

@@ -1,16 +1,18 @@
 /**
  * capture group 1:
- *   **0-9**
+ *   **WORD**
  */
-/(\d)/;
+/(\w)/;
+
 /**
  * **0-9** (_>= 0x_)
  * capture group 1:
  *   **0-9**
  */
 /\d*(\d)/;
+
 /**
- *  **NOT followed by **:
+ *  **NOT followed by**:
  *   non-capturing group (_>= 1x_):
  *     **ANY** (_>= 0x_)
  *     **LF**
@@ -20,28 +22,31 @@
  *   **WB**
  */
 /(?!(?:.*\n)+(?:.{10}){0}\1\b)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   **0-9** (_>= 0x_)
- *   ` `
+ *   `(space)`
  *   non-capturing group (_>= 0x_) (_lazy_):
  *     **ANY** (_10x_)
  *   `1`
  *   **WB**
  */
 /(?!\d*\ (?:.{10})*?\1\b)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   **0-9** (_>= 0x_)
- *   ` `
+ *   `(space)`
  *   non-capturing group (_0-1x_):
  *     **ANY** (_10x_)
  *   `1`
  *   **WB**
  */
 /(?!\d*\ (?:.{10}){0,1}\1\b)/;
+
 /**
- *  **NOT followed by **:
+ *  **NOT followed by**:
  *   non-capturing group (_1-2x_):
  *     **ANY** (_>= 0x_)
  *     **LF**
@@ -59,13 +64,16 @@
  * **WS** (_>= 1x_)
  */
 /\d*\s+/;
+
 /**
- * **0-9** (_>= 0x_) **NOT followed by **:
+ * **0-9** (_>= 0x_)
+ * **NOT followed by**:
  *   `1`
  */
 /\d*(?!\1)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   non-capturing group (_>= 1x_):
  *     **ANY** (_>= 0x_)
  *     **LF**
@@ -75,28 +83,31 @@
  *   **WB**
  */
 /(?!(?:.*\n)+(?:.{10}){1}\2\b)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   **0-9** (_>= 0x_)
- *   ` `
+ *   `(space)`
  *   non-capturing group (_>= 0x_) (_lazy_):
  *     **ANY** (_10x_)
  *   `2`
  *   **WB**
  */
 /(?!\d*\ (?:.{10})*?\2\b)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   **0-9** (_>= 0x_)
- *   ` `
+ *   `(space)`
  *   non-capturing group (_0-0x_):
  *     **ANY** (_10x_)
  *   `2`
  *   **WB**
  */
 /(?!\d*\ (?:.{10}){0,0}\2\b)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   non-capturing group (_1-2x_):
  *     **ANY** (_>= 0x_)
  *     **LF**
@@ -114,13 +125,16 @@
  * **WS** (_>= 1x_)
  */
 /\d*\s+/;
+
 /**
- * **0-9** (_>= 0x_) **NOT followed by **:
+ * **0-9** (_>= 0x_)
+ * **NOT followed by**:
  *   Either `1` or `2`
  */
 /\d*(?!\1|\2)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   non-capturing group (_>= 1x_):
  *     **ANY** (_>= 0x_)
  *     **LF**
@@ -130,18 +144,20 @@
  *   **WB**
  */
 /(?!(?:.*\n)+(?:.{10}){2}\3\b)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   **0-9** (_>= 0x_)
- *   ` `
+ *   `(space)`
  *   non-capturing group (_>= 0x_) (_lazy_):
  *     **ANY** (_10x_)
  *   `3`
  *   **WB**
  */
 /(?!\d*\ (?:.{10})*?\3\b)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   non-capturing group (_1-2x_):
  *     **ANY** (_>= 0x_)
  *     **LF**
@@ -160,13 +176,16 @@
  * **WS** (_>= 1x_)
  */
 /split\d*\s+/;
+
 /**
- * **0-9** (_>= 0x_) **NOT followed by **:
+ * **0-9** (_>= 0x_)
+ * **NOT followed by**:
  *   Either `1`, `2`, or `3`
  */
 /\d*(?!\1|\2|\3)/;
+
 /**
- * **NOT followed by **:
+ * **NOT followed by**:
  *   non-capturing group (_>= 1x_):
  *     **ANY** (_>= 0x_)
  *     **LF**
@@ -176,8 +195,41 @@
  *   **WB**
  */
 /(?!(?:.*\n)+(?:.{10}){3}\4\b)/;
+
+/**
+ * **NOT followed by**:
+ *   **0-9** (_>= 0x_)
+ *   `(space)`
+ *   non-capturing group (_>= 0x_) (_lazy_):
+ *     **ANY** (_10x_)
+ *   `4`
+ *   **WB**
+ */
 /(?!\d*\ (?:.{10})*?\4\b)/;
+
+/**
+ * **NOT followed by**:
+ *   **0-9** (_>= 0x_)
+ *   `(space)`
+ *   non-capturing group (_0-1x_):
+ *     **ANY** (_10x_)
+ *   `4`
+ *   **WB**
+ */
 /(?!\d*\ (?:.{10}){0,1}\4\b)/;
+
+/**
+ * **NOT followed by**:
+ *   non-capturing group (_1-2x_):
+ *     **ANY** (_>= 0x_)
+ *     **LF**
+ *   non-capturing group (_1x_):
+ *     **ANY** (_30x_)
+ *   non-capturing group (_0-2x_):
+ *     **ANY** (_10x_)
+ *   `4`
+ *   **WB**
+ */
 /(?!(?:.*\n){1,2}(?:.{30}){1}(?:.{10}){0,2}\4\b)/;
 
 /\d*(?!\1|\2|\3|\4)/;
@@ -587,8 +639,3 @@
 /\d*(?!\9|\18|\27|\36|\45|\54|\61|\62|\63|\70|\71|\72|\73|\74|\75|\76|\77|\78|\79|\80)/;
 /(?!(?:.*\n)+(?:.{10}){8}\81\b)/;
 /(?!\d*\ (?:.{10})*?\81\b)/;
-
-/**
- * `Z`
- */
-/\Z/;

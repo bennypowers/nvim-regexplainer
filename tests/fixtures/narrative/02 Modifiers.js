@@ -1,12 +1,10 @@
 /**
- * @example EXPECTED:
  * `hello`
  * `!` (_optional_)
  */
-/hello!?/; 
+/hello!?/;
 
 /**
- * @example EXPECTED:
  * `hello`
  * `.` (_optional_)
  */
