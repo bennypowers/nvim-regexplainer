@@ -16,7 +16,7 @@ local au = vim.api.nvim_create_autocmd
 ---@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
 ---@field debug?            boolean                              # Notify debug logs
 ---@field display?          'split'|'popup'
----@field mappings?         RegexplainerMappings                 # keymappings to automatically bind. Supports `which-key`
+---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind.
 ---@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
 ---@field popup?            NuiPopupBufferOptions                # options for the popup buffer
 ---@field split?            NuiSplitBufferOptions                # options for the split buffer
@@ -143,17 +143,10 @@ function M.setup(config)
   local_config = deep_extend('keep', config or {}, default_config)
 
   -- bind keys from config
-  local has_which_key = pcall(require, 'which-key')
   for cmdmap, binding in pairs(local_config.mappings) do
     local cmd, description = unpack(config_command_map[cmdmap])
     local command = ':' .. cmd .. '<CR>'
-
-    if has_which_key then
-      local wk = require 'which-key'
-      wk.register({ [binding] = { command, description } }, { mode = 'n' })
-    else
-      utils.map('n', binding, command)
-    end
+    utils.map('n', binding, command, { desc = description })
   end
 
   -- setup autocommand
