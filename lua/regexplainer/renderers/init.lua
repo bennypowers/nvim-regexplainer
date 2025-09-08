@@ -10,5 +10,6 @@
 local M = {}
 
 M.narrative = require 'regexplainer.renderers.narrative'
+M.graphical = require 'regexplainer.renderers.graphical'
 
 return M

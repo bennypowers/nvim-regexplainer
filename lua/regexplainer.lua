@@ -11,13 +11,15 @@ local ag = vim.api.nvim_create_augroup
 local au = vim.api.nvim_create_autocmd
 
 ---@class RegexplainerOptions
----@field mode?             'narrative'|'debug'                  # TODO: 'ascii', 'graphical'
+---@field mode?             'narrative'|'debug'|'graphical'      # Renderer mode
 ---@field auto?             boolean                              # Automatically display when cursor enters a regexp
 ---@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
 ---@field debug?            boolean                              # Notify debug logs
 ---@field display?          'split'|'popup'
 ---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind.
 ---@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
+---@field graphical?        RegexplainerGraphicalRendererOptions # Options for the graphical renderer
+---@field deps?             RegexplainerDepsConfig               # Options for dependency management
 ---@field popup?            NuiPopupBufferOptions                # options for the popup buffer
 ---@field split?            NuiSplitBufferOptions                # options for the split buffer
 
@@ -67,6 +69,17 @@ local default_config = {
   narrative = {
     indentation_string = '  ',
   },
+  graphical = {
+    width = 800,
+    height = 600,
+    python_cmd = nil, -- Will be auto-detected
+  },
+  deps = {
+    auto_install = true,
+    python_cmd = nil, -- Will be auto-detected
+    venv_path = nil,  -- Will be auto-generated
+    check_interval = 3600,
+  },
 }
 
 --- A deep copy of the default config.
@@ -103,7 +116,14 @@ local function show_for_real(options)
       renderer = require'regexplainer.renderers.debug'
     end
 
-    local state = { full_regexp_text = get_node_text(node, scratchnr) }
+    local start_row, start_col, end_row, end_col = node:range()
+    local state = { 
+      full_regexp_text = get_node_text(node, scratchnr),
+      full_regexp_range = {
+        start = { row = start_row, column = start_col },
+        finish = { row = end_row, column = end_col }
+      }
+    }
 
     Buffers.render(buffer, renderer, components, options, state)
     buf_delete(scratchnr, { force = true })
