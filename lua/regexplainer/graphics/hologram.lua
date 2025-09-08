@@ -61,10 +61,28 @@ local function display_image(base64_data, options)
   -- Determine position for image placement
   local row, col, bufnr
   if options.buffer then
-    -- Display within the popup content area
-    row = 1  -- Position at top of popup content
-    col = 0
+    -- For split mode, use current cursor position in the buffer
+    -- For popup mode, position at top of popup content
     bufnr = options.buffer
+    
+    -- Check if we're in a split window (non-popup buffer)
+    local win_for_buf = nil
+    for _, win in ipairs(vim.api.nvim_list_wins()) do
+      if vim.api.nvim_win_get_buf(win) == bufnr then
+        win_for_buf = win
+        break
+      end
+    end
+    
+    if win_for_buf then
+      local cursor_pos = vim.api.nvim_win_get_cursor(win_for_buf)
+      row = cursor_pos[1]
+      col = cursor_pos[2]
+    else
+      -- Fallback to top-left
+      row = 1
+      col = 0
+    end
   else
     -- Fallback: display at current cursor position
     local cursor_pos = vim.api.nvim_win_get_cursor(0)
@@ -82,6 +100,11 @@ local function display_image(base64_data, options)
 
   -- Create hologram image object and display it
   local success, err = pcall(function()
+    -- Check if buffer is valid
+    if not vim.api.nvim_buf_is_valid(bufnr) then
+      error('Buffer is not valid: ' .. bufnr)
+    end
+    
     -- Require the image module directly
     local img_ok, image_module = pcall(require, 'hologram.image')
     if not img_ok then
@@ -97,7 +120,8 @@ local function display_image(base64_data, options)
     -- Display the image at natural size (let popup control visible area)
     -- Hologram scaling seems to cause vertical stretching issues
     local display_opts = {}
-
+    
+    -- Use standard hologram display approach
     local display_result = image_obj:display(row, col, bufnr, display_opts)
 
     -- Store image reference for cleanup
