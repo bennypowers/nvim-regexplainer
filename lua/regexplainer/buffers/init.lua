@@ -88,6 +88,11 @@ function M.render(buffer, renderer, components, options, state)
   buffer:init(lines, options, state)
   renderer.set_lines(buffer, lines)
   buffer:after(lines, options, state)
+  
+  -- Call renderer-specific after hook if available
+  if renderer.after_render then
+    renderer.after_render(buffer, lines, options, state)
+  end
 end
 
 --- Close and unload a buffer
