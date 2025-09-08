@@ -11,7 +11,7 @@ import io
 from typing import Any, Dict, List, Optional, Union
 
 try:
-    from railroad import *
+    import railroad
     from PIL import Image
     import cairosvg
 except ImportError as e:
@@ -44,50 +44,50 @@ class RailroadDiagramGenerator:
         element = None
 
         if comp_type == 'pattern_character':
-            element = Terminal(text)
+            element = railroad.Terminal(text)
         elif comp_type == 'character_class':
             if component.get('negative'):
-                element = Terminal(f"[^{text[2:-1]}]")
+                element = railroad.Terminal(f"[^{text[2:-1]}]")
             else:
-                element = Terminal(text)
+                element = railroad.Terminal(text)
         elif comp_type == 'start_assertion':
-            element = Terminal('^')
+            element = railroad.Terminal('^')
         elif comp_type == 'end_assertion':
-            element = Terminal('$')
+            element = railroad.Terminal('$')
         elif comp_type == 'boundary_assertion':
-            element = Terminal(text)
+            element = railroad.Terminal(text)
         elif comp_type == 'identity_escape':
-            element = Terminal(text)
+            element = railroad.Terminal(text)
         elif comp_type == 'character_class_escape':
-            element = Terminal(text)
+            element = railroad.Terminal(text)
         elif comp_type == 'control_escape':
-            element = Terminal(text)
+            element = railroad.Terminal(text)
         elif comp_type == 'decimal_escape':
-            element = Terminal(text)
+            element = railroad.Terminal(text)
         elif comp_type in ['anonymous_capturing_group', 'named_capturing_group']:
             if children:
                 child_elements = [self.component_to_railroad(child) for child in children]
                 if len(child_elements) == 1:
-                    element = Group(child_elements[0], component.get('group_name', f"group {component.get('capture_group', '')}"))
+                    element = railroad.Group(child_elements[0], component.get('group_name', f"group {component.get('capture_group', '')}"))
                 else:
-                    element = Group(Sequence(*child_elements), component.get('group_name', f"group {component.get('capture_group', '')}"))
+                    element = railroad.Group(railroad.Sequence(*child_elements), component.get('group_name', f"group {component.get('capture_group', '')}"))
             else:
-                element = Group(Terminal(''), component.get('group_name', f"group {component.get('capture_group', '')}"))
+                element = railroad.Group(railroad.Terminal(''), component.get('group_name', f"group {component.get('capture_group', '')}"))
         elif comp_type == 'non_capturing_group':
             if children:
                 child_elements = [self.component_to_railroad(child) for child in children]
                 if len(child_elements) == 1:
                     element = child_elements[0]
                 else:
-                    element = Sequence(*child_elements)
+                    element = railroad.Sequence(*child_elements)
             else:
-                element = Terminal('')
+                element = railroad.Terminal('')
         elif comp_type == 'alternation':
             if children:
                 child_elements = [self.component_to_railroad(child) for child in children]
-                element = Choice(0, *child_elements)
+                element = railroad.Choice(0, *child_elements)
             else:
-                element = Terminal('')
+                element = railroad.Terminal('')
         elif comp_type == 'lookaround_assertion':
             direction = component.get('direction', 'ahead')
             negative = component.get('negative', False)
@@ -98,36 +98,36 @@ class RailroadDiagramGenerator:
             if children:
                 child_elements = [self.component_to_railroad(child) for child in children]
                 if len(child_elements) == 1:
-                    element = Group(child_elements[0], prefix)
+                    element = railroad.Group(child_elements[0], prefix)
                 else:
-                    element = Group(Sequence(*child_elements), prefix)
+                    element = railroad.Group(railroad.Sequence(*child_elements), prefix)
             else:
-                element = Terminal(f"({prefix})")
+                element = railroad.Terminal(f"({prefix})")
         elif comp_type in ['pattern', 'term', 'root']:
             if children:
                 child_elements = [self.component_to_railroad(child) for child in children]
                 if len(child_elements) == 1:
                     element = child_elements[0]
                 else:
-                    element = Sequence(*child_elements)
+                    element = railroad.Sequence(*child_elements)
             else:
-                element = Terminal('')
+                element = railroad.Terminal('')
         else:
             # Fallback for unknown types
-            element = Terminal(text or comp_type)
+            element = railroad.Terminal(text or comp_type)
 
         # Apply quantifiers
         if element:
             if zero_or_more:
-                element = ZeroOrMore(element)
+                element = railroad.ZeroOrMore(element)
             elif one_or_more:
-                element = OneOrMore(element)
+                element = railroad.OneOrMore(element)
             elif optional:
-                element = Optional(element)
+                element = railroad.Optional(element)
             elif quantifier:
-                element = Group(element, quantifier)
+                element = railroad.Group(element, quantifier)
 
-        return element or Terminal('')
+        return element or railroad.Terminal('')
 
     def calculate_font_size(self) -> int:
         """Calculate appropriate font size based on image dimensions and constraints."""
@@ -137,7 +137,7 @@ class RailroadDiagramGenerator:
     def components_to_diagram(self, components: List[Dict[str, Any]]) -> Any:
         """Convert a list of components to a complete railroad diagram."""
         if not components:
-            return Diagram(Terminal(''))
+            return railroad.Diagram(railroad.Terminal(''))
 
         elements = []
         for component in components:
@@ -146,9 +146,9 @@ class RailroadDiagramGenerator:
                 elements.append(element)
 
         if len(elements) == 1:
-            return Diagram(elements[0])
+            return railroad.Diagram(elements[0])
         else:
-            return Diagram(Sequence(*elements))
+            return railroad.Diagram(railroad.Sequence(*elements))
 
     def apply_dark_theme_styles(self, svg_data: str) -> str:
         """Apply dark theme CSS styles to SVG data with dynamic font sizing."""
@@ -209,7 +209,6 @@ class RailroadDiagramGenerator:
         """Trim the image to content with a small vertical margin."""
         try:
             # Load the PNG data as a PIL image
-            import io
             img = Image.open(io.BytesIO(png_data))
 
             # Convert to RGBA to handle transparency
@@ -254,7 +253,6 @@ class RailroadDiagramGenerator:
             diagram = self.components_to_diagram(components)
 
             # Generate SVG
-            import io
             svg_buffer = io.StringIO()
             diagram.writeStandalone(svg_buffer.write)
             svg_data = svg_buffer.getvalue()
@@ -275,7 +273,6 @@ class RailroadDiagramGenerator:
             png_data = self.trim_image_with_margin(png_data)
 
             # Debug: Check final image size after trimming
-            import io
             final_img = Image.open(io.BytesIO(png_data))
             # print(f"DEBUG: Final image size after trimming: {final_img.width}x{final_img.height} pixels", file=sys.stderr)
 

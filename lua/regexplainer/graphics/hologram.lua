@@ -39,8 +39,8 @@ local function display_image(base64_data, options)
     return false
   end
 
-  -- Create a temporary file for the image
-  local temp_file = '/tmp/regexplainer_' .. os.time() .. '_' .. math.random(1000, 9999) .. '.png'
+  -- Create a temporary file for the image (cross-platform)
+  local temp_file = vim.fn.tempname() .. '.png'
 
   local file = io.open(temp_file, 'wb')
   if not file then
