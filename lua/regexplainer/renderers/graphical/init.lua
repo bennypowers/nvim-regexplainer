@@ -6,10 +6,23 @@ local cache = require 'regexplainer.cache'
 
 local M = {}
 
+-- Configuration constants
+local DEFAULT_GENERATION_WIDTH = 1200  -- Large enough for any railroad diagram
+local DEFAULT_GENERATION_HEIGHT = 800  -- Large enough for any railroad diagram
+local DEFAULT_FONT_CHAR_WIDTH = 2      -- Virtual character width for scaling calculations
+local DEFAULT_FONT_CHAR_HEIGHT = 4     -- Virtual character height for scaling calculations
+
+-- Text scaling factors
+local MIN_TEXT_HEIGHT_FACTOR = 0.5     -- Minimum text height as factor of char_height
+local MAX_TEXT_HEIGHT_FACTOR = 2.0     -- Maximum text height as factor of char_height
+local IDEAL_TEXT_HEIGHT_FACTOR = 1.2   -- Ideal text height as factor of char_height
+
 ---@class RegexplainerGraphicalRendererOptions
 ---@field width? number # Image width in pixels (default: 800)
 ---@field height? number # Image height in pixels (default: 600)
 ---@field python_cmd? string # Python command to use (default: 'python3')
+---@field generation_width? number # Width for initial image generation (default: 1200)
+---@field generation_height? number # Height for initial image generation (default: 800)
 
 --- Get the path to the railroad generator script
 ---@return string
@@ -20,30 +33,35 @@ local function get_script_path()
 end
 
 --- Get consistent terminal font dimensions
+---@param options? RegexplainerGraphicalRendererOptions
 ---@return number char_width, number char_height
-local function get_terminal_font_dimensions()
+local function get_terminal_font_dimensions(options)
+  local graphical_opts = options and options.graphical or {}
   -- Since hologram.nvim seems to be scaling images up dramatically,
   -- we need to use much smaller "virtual" character dimensions
   -- to generate appropriately sized images
-  return 2, 4 -- Much smaller to counteract scaling (was 8, 16)
+  local char_width = graphical_opts.char_width or DEFAULT_FONT_CHAR_WIDTH
+  local char_height = graphical_opts.char_height or DEFAULT_FONT_CHAR_HEIGHT
+  return char_width, char_height
 end
 
 --- Calculate optimal image size based on font size constraints
+---@param options? RegexplainerOptions
 ---@return number width, number height
-local function calculate_image_size()
+local function calculate_image_size(options)
   -- Get current window dimensions
   local winid = vim.api.nvim_get_current_win()
   local win_width = vim.api.nvim_win_get_width(winid)
   local win_height = vim.api.nvim_win_get_height(winid)
 
   -- Get terminal font dimensions (consistent with popup sizing)
-  local char_width, char_height = get_terminal_font_dimensions()
+  local char_width, char_height = get_terminal_font_dimensions(options)
 
-  -- Text in image should be between 0.5 and 2 terminal rows in height
+  -- Text in image should be between configurable factors of terminal rows in height
   -- Railroad diagram text is typically around 12-14px font size
-  local min_text_height = char_height * 0.5 -- 8px minimum
-  local max_text_height = char_height * 2.0 -- 32px maximum
-  local ideal_text_height = char_height * 1.2 -- 19.2px ideal
+  local min_text_height = char_height * MIN_TEXT_HEIGHT_FACTOR
+  local max_text_height = char_height * MAX_TEXT_HEIGHT_FACTOR
+  local ideal_text_height = char_height * IDEAL_TEXT_HEIGHT_FACTOR
 
   -- Estimate railroad diagram dimensions based on text size constraints
   -- Railroad diagrams typically need 3-4x the text height for spacing and connections
@@ -90,8 +108,8 @@ local function generate_railroad_diagram(components, options, pattern_text, over
   local graphical_opts = options.graphical or {}
 
   -- Always generate at full readable size (Python will trim to actual content)
-  local width = 1200 -- Large enough for any railroad diagram
-  local height = 800 -- Large enough for any railroad diagram
+  local width = graphical_opts.generation_width or DEFAULT_GENERATION_WIDTH
+  local height = graphical_opts.generation_height or DEFAULT_GENERATION_HEIGHT
 
   -- Check cache first
   local cached_data = cache.get_cached_image(pattern_text, width, height)

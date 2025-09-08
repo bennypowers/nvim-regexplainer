@@ -26,8 +26,6 @@ local split_defaults = {
 local function after(self, lines, options, state)
   -- Set flag to prevent cursor exit detection until setup is complete
   self._setup_complete = false
-  local utils = require 'regexplainer.utils'
-  utils.notify('Split after() starting', 'info')
   set_current_win(state.last.parent.winnr)
   set_current_buf(state.last.parent.bufnr)
   
@@ -48,9 +46,15 @@ local function after(self, lines, options, state)
   -- Check if winid is valid before setting height
   if self.winid and vim.api.nvim_win_is_valid(self.winid) then
     win_set_height(self.winid, split_height)
-    utils.notify(string.format('Split height set to %d', split_height), 'info')
+    if options.debug then
+      local utils = require 'regexplainer.utils'
+      utils.notify(string.format('Split height set to %d', split_height), 'info')
+    end
   else
-    utils.notify(string.format('Invalid winid %s, cannot set height', self.winid or 'nil'), 'warn')
+    if options.debug then
+      local utils = require 'regexplainer.utils'
+      utils.notify(string.format('Invalid winid %s, cannot set height', self.winid or 'nil'), 'warn')
+    end
   end
   
   -- Display image in split mode if we have image data
@@ -107,27 +111,20 @@ local function after(self, lines, options, state)
   
   -- Add cursor exit handling to hide split (like popup mode)
   if options.auto then
-    utils.notify('Setting up cursor exit autocmd', 'info')
     vim.api.nvim_create_autocmd({'CursorMoved', 'CursorMovedI'}, {
       callback = function()
         -- Only trigger if setup is complete
         if not self._setup_complete then
-          utils.notify('Cursor moved but setup not complete, ignoring', 'info')
           return
         end
-        
-        utils.notify('Cursor moved and setup complete, checking regexp', 'info')
         
         -- Use the same logic as auto mode - check if there's still a regexp at cursor
         local tree = require 'regexplainer.utils.treesitter'
         if not tree.has_regexp_at_cursor() then
-          utils.notify('No regexp at cursor, hiding split', 'info')
           -- No longer on a regex pattern, hide the split
           if self and self.hide then
             self:hide()
           end
-        else
-          utils.notify('Still on regexp, keeping split', 'info')
         end
       end,
       once = true,
@@ -150,42 +147,33 @@ local function after(self, lines, options, state)
   
   -- Mark setup as complete at the very end
   self._setup_complete = true
-  utils.notify('Split after() complete', 'info')
 end
 
 function M.get_buffer(options, state)
-  local utils = require 'regexplainer.utils'
-  
   if state.last.type == 'NuiSplit' then
-    utils.notify('Reusing existing split buffer', 'info')
     -- Check if the split still exists and is valid
     if state.last.winid and vim.api.nvim_win_is_valid(state.last.winid) then
-      utils.notify('Split window still valid, reusing', 'info')
       return state.last
     else
-      utils.notify('Split window invalid, creating new one', 'info')
       -- Reset the state so we create a new split
       state.last = { type = nil }
     end
   end
-  
-  utils.notify('Creating new split buffer', 'info')
   local buffer = Split(extend('force', Shared.shared_options, split_defaults, options.split or {}))
   buffer.type = 'NuiSplit'
   state.last = buffer
   buffer.init = function(self, lines, options, state)
-    utils.notify('Split init() called', 'info')
     Shared.default_buffer_init(self, lines, options, state)
-    utils.notify(string.format('Split mounted, winid: %s', self.winid), 'info')
+    if options.debug then
+      local utils = require 'regexplainer.utils'
+      utils.notify(string.format('Split mounted, winid: %s', self.winid), 'info')
+    end
   end
   buffer.after = after
   
-  -- Override hide method to add debugging and cleanup hologram
+  -- Override hide method to cleanup hologram
   local original_hide = buffer.hide
   buffer.hide = function(self)
-    utils.notify('Split hide() called!', 'warn')
-    utils.notify(debug.traceback('Hide called from:', 2), 'warn')
-    
     -- Clean up any hologram images when hiding
     if _G._regexplainer_hologram_image and _G._regexplainer_hologram_bufnr then
       pcall(function()
