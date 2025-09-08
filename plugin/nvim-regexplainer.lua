@@ -28,3 +28,5 @@ command('RegexplainerDebug', function () regexplainer.show {
   mode = 'debug',
   auto = false,
 } end)
+
+command('RegexplainerClearCache', function () regexplainer.clear_cache() end)

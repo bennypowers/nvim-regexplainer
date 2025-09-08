@@ -18,11 +18,9 @@ end
 
 --- Display an image using hologram.nvim
 ---@param base64_data string # Base64 encoded PNG data
----@param width? number # Image width in pixels
----@param height? number # Image height in pixels
----@param target_bufnr? number # Target buffer number (optional)
+---@param options? table # Display options: {width?, height?, buffer?}
 ---@return boolean # True if successfully displayed
-local function display_image(base64_data, width, height, target_bufnr)
+local function display_image(base64_data, options)
   if not is_hologram_available() then
     return false
   end
@@ -58,13 +56,15 @@ local function display_image(base64_data, width, height, target_bufnr)
     return false
   end
 
+  options = options or {}
+  
   -- Determine position for image placement
   local row, col, bufnr
-  if target_bufnr then
+  if options.buffer then
     -- Display within the popup content area
     row = 1  -- Position at top of popup content
     col = 0
-    bufnr = target_bufnr
+    bufnr = options.buffer
   else
     -- Fallback: display at current cursor position
     local cursor_pos = vim.api.nvim_win_get_cursor(0)
@@ -94,10 +94,11 @@ local function display_image(base64_data, width, height, target_bufnr)
       error 'Failed to create hologram image object'
     end
 
-    -- Display the image using the documented API: display(row, col, buf, {})
-    -- hologram.nvim displays images at native pixel size regardless of options
+    -- Display the image at natural size (let popup control visible area)
+    -- Hologram scaling seems to cause vertical stretching issues
+    local display_opts = {}
 
-    local display_result = image_obj:display(row, col, bufnr, {})
+    local display_result = image_obj:display(row, col, bufnr, display_opts)
 
     -- Store image reference for cleanup
     _G._regexplainer_hologram_image = image_obj
