@@ -10,6 +10,8 @@ Describe the regular expression under the cursor.
 
 https://user-images.githubusercontent.com/1466420/156946492-a05600dc-0a5b-49e6-9ad2-417a403909a8.mov
 
+[railroads.webm](https://github.com/user-attachments/assets/0b17e421-3df5-4ea6-a4bc-5e32e5204216)
+
 Heavily inspired by the venerable [atom-regexp-railroad][atom-regexp-railroad].
 
 > 👉 **NOTE**: Requires Neovim 0.7 👈
@@ -191,24 +193,30 @@ You can also use the command `RegexplainerYank`
 
 ## 🚂 Graphical Mode
 
-Regexplainer supports displaying regular expressions as visual railroad diagrams using hologram.nvim. This provides an intuitive visual representation of regex patterns.
+Regexplainer supports displaying regular expressions as visual railroad diagrams, providing an intuitive visual representation of regex patterns that makes complex expressions easier to understand at a glance.
 
 ### Requirements
 
 - [hologram.nvim](https://github.com/edluffy/hologram.nvim) plugin for image display
-- Python 3.9+ (dependencies are managed automatically)
+- A supported terminal (Kitty, iTerm2, or other hologram-compatible terminals)
+- Python 3.7+ (dependencies are managed automatically)
 
-### Usage
+### Quick Start
 
 Set the mode to `graphical` in your configuration:
 
 ```lua
 require'regexplainer'.setup {
   mode = 'graphical',
+  -- Both popup and split modes work with graphical display
+  display = 'popup', -- or 'split'
+  
   graphical = {
-    width = 800,        -- image width in pixels
-    height = 600,       -- image height in pixels  
+    -- Optional: customize image generation
+    generation_width = 1200,   -- Initial generation width (default: 1200)
+    generation_height = 800,   -- Initial generation height (default: 800)
   },
+  
   deps = {
     auto_install = true, -- automatically install Python dependencies
   },
@@ -217,24 +225,40 @@ require'regexplainer'.setup {
 
 ### Features
 
-- **Visual railroad diagrams**: Regular expressions are converted to railroad diagrams using the `railroad-diagrams` library
-- **hologram.nvim integration**: Images are displayed directly in Neovim using hologram.nvim
-- **Automatic dependency management**: Python dependencies are installed automatically in an isolated environment
-- **Graceful fallback**: Automatically falls back to narrative mode if graphics are unavailable
-- **Multiple terminal support**: Works with any terminal supported by hologram.nvim (Kitty, iTerm2, etc.)
+- **🎨 Visual railroad diagrams**: Convert regex patterns into clear, readable railroad diagrams using the `railroad-diagrams` library
+- **📱 Multiple display modes**: Works in both popup windows (with pattern overlay) and split windows
+- **🔧 Smart sizing**: Images automatically scale to fit your window while preserving aspect ratio
+- **⚡ Caching**: Generated diagrams are cached for faster subsequent displays
+- **🐍 Zero-config Python**: Dependencies are automatically managed in an isolated environment
+- **📺 Wide terminal support**: Works with any terminal supported by hologram.nvim
+- **🔄 Graceful fallback**: Automatically falls back to narrative mode if graphics are unavailable
+- **🚀 Cross-platform**: Fully compatible with Windows, macOS, and Linux
+
+### Display Modes
+
+#### Popup Mode (Default)
+- Railroad diagram appears in a popup window
+- Original regex pattern shown in a separate overlay
+- Automatically closes when cursor moves away
+- Perfect for quick regex inspection
+
+#### Split Mode  
+- Railroad diagram appears in a dedicated split window
+- Original pattern remains visible in the main buffer
+- Great for complex regex analysis and comparison
 
 ### Dependency Management
 
-nvim-regexplainer automatically manages Python dependencies for graphical mode:
+nvim-regexplainer automatically handles all Python dependencies:
 
-- **Automatic installation**: Required packages (`railroad-diagrams`, `Pillow`, `cairosvg`) are installed automatically when first needed
-- **Isolated environment**: Dependencies are installed in a virtual environment within the plugin directory
-- **System independence**: Works without affecting your system Python installation
-- **Health checks**: Use `:checkhealth regexplainer` to verify everything is working correctly
+- **🔄 Automatic installation**: Required packages (`railroad-diagrams`, `Pillow`, `cairosvg`) are installed when first needed
+- **🏠 Isolated environment**: Uses a virtual environment in the plugin directory
+- **🔒 System-safe**: Never affects your system Python installation  
+- **🩺 Health checks**: Run `:checkhealth regexplainer` to verify everything is working
 
-#### Manual dependency management
+#### Manual Dependency Management
 
-If you prefer to manage dependencies manually, you can disable auto-installation:
+If you prefer manual control:
 
 ```lua
 require'regexplainer'.setup {
@@ -242,11 +266,12 @@ require'regexplainer'.setup {
   deps = {
     auto_install = false,
     python_cmd = 'python3', -- specify Python executable
+    venv_path = '/custom/path', -- custom virtual environment path
   },
 }
 ```
 
-Then install the required packages in your preferred Python environment:
+Then install the required packages:
 
 ```bash
 pip install railroad-diagrams Pillow cairosvg
@@ -254,7 +279,10 @@ pip install railroad-diagrams Pillow cairosvg
 
 ## 🗃️  TODO list
 - [ ] Display Regexp [railroad diagrams][railroad-diagrams] using ASCII-art
-- [x] Display Regexp [railroad diagrams][railroad-diagrams] via [kitty image protocol][kitty]
+- [x] Display Regexp [railroad diagrams][railroad-diagrams] via [hologram.nvim][hologram]
+- [x] Support both popup and split display modes for graphical diagrams
+- [x] Automatic Python dependency management
+- [x] Cross-platform compatibility (Windows, macOS, Linux)
 - [ ] Add sixel protocol support for wider terminal compatibility
 - [ ] online documentation
 - [x] some unit tests or something, i guess
