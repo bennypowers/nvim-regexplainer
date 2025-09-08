@@ -249,7 +249,6 @@ class RailroadDiagramGenerator:
         """Generate a PNG image from components and return as base64 string."""
         try:
             # All debug output should go to stderr
-            # print(f"DEBUG: Generating image at {self.width}x{self.height} pixels", file=sys.stderr)
             diagram = self.components_to_diagram(components)
 
             # Generate SVG
@@ -274,7 +273,6 @@ class RailroadDiagramGenerator:
 
             # Debug: Check final image size after trimming
             final_img = Image.open(io.BytesIO(png_data))
-            # print(f"DEBUG: Final image size after trimming: {final_img.width}x{final_img.height} pixels", file=sys.stderr)
 
             # Get final image dimensions after trimming
             final_img = Image.open(io.BytesIO(png_data))

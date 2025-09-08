@@ -113,8 +113,13 @@ local function check_python_packages(python_cmd)
 
   for _, package in ipairs(required_packages) do
     -- Use cross-platform error suppression
-    local stderr_redirect = vim.fn.has('win32') == 1 and '2>NUL' or '2>/dev/null'
-    local cmd = string.format('%s -c "import %s" %s', vim.fn.shellescape(python_cmd), package, stderr_redirect)
+    local stderr_redirect = vim.fn.has 'win32' == 1 and '2>NUL' or '2>/dev/null'
+    local cmd = string.format(
+      '%s -c "import %s" %s',
+      vim.fn.shellescape(python_cmd),
+      vim.fn.shellescape(package),
+      stderr_redirect
+    )
     local success = run_command(cmd)
     if not success then
       table.insert(missing, package)

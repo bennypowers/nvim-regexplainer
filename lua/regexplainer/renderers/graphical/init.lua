@@ -7,15 +7,8 @@ local cache = require 'regexplainer.cache'
 local M = {}
 
 -- Configuration constants
-local DEFAULT_GENERATION_WIDTH = 1200  -- Large enough for any railroad diagram
-local DEFAULT_GENERATION_HEIGHT = 800  -- Large enough for any railroad diagram
-local DEFAULT_FONT_CHAR_WIDTH = 2      -- Virtual character width for scaling calculations
-local DEFAULT_FONT_CHAR_HEIGHT = 4     -- Virtual character height for scaling calculations
-
--- Text scaling factors
-local MIN_TEXT_HEIGHT_FACTOR = 0.5     -- Minimum text height as factor of char_height
-local MAX_TEXT_HEIGHT_FACTOR = 2.0     -- Maximum text height as factor of char_height
-local IDEAL_TEXT_HEIGHT_FACTOR = 1.2   -- Ideal text height as factor of char_height
+local DEFAULT_GENERATION_WIDTH = 1200 -- Large enough for any railroad diagram
+local DEFAULT_GENERATION_HEIGHT = 800 -- Large enough for any railroad diagram
 
 ---@class RegexplainerGraphicalRendererOptions
 ---@field width? number # Image width in pixels (default: 800)
@@ -32,79 +25,12 @@ local function get_script_path()
   return script_dir .. '/railroad_generator.py'
 end
 
---- Get consistent terminal font dimensions
----@param options? RegexplainerGraphicalRendererOptions
----@return number char_width, number char_height
-local function get_terminal_font_dimensions(options)
-  local graphical_opts = options and options.graphical or {}
-  -- Since hologram.nvim seems to be scaling images up dramatically,
-  -- we need to use much smaller "virtual" character dimensions
-  -- to generate appropriately sized images
-  local char_width = graphical_opts.char_width or DEFAULT_FONT_CHAR_WIDTH
-  local char_height = graphical_opts.char_height or DEFAULT_FONT_CHAR_HEIGHT
-  return char_width, char_height
-end
-
---- Calculate optimal image size based on font size constraints
----@param options? RegexplainerOptions
----@return number width, number height
-local function calculate_image_size(options)
-  -- Get current window dimensions
-  local winid = vim.api.nvim_get_current_win()
-  local win_width = vim.api.nvim_win_get_width(winid)
-  local win_height = vim.api.nvim_win_get_height(winid)
-
-  -- Get terminal font dimensions (consistent with popup sizing)
-  local char_width, char_height = get_terminal_font_dimensions(options)
-
-  -- Text in image should be between configurable factors of terminal rows in height
-  -- Railroad diagram text is typically around 12-14px font size
-  local min_text_height = char_height * MIN_TEXT_HEIGHT_FACTOR
-  local max_text_height = char_height * MAX_TEXT_HEIGHT_FACTOR
-  local ideal_text_height = char_height * IDEAL_TEXT_HEIGHT_FACTOR
-
-  -- Estimate railroad diagram dimensions based on text size constraints
-  -- Railroad diagrams typically need 3-4x the text height for spacing and connections
-  local diagram_height_ratio = 3.5
-  local ideal_diagram_height = ideal_text_height * diagram_height_ratio
-
-  -- Calculate initial pixel dimensions
-  local pixel_width = math.floor(win_width * char_width * 0.75) -- 75% of window width
-  local pixel_height = math.floor(ideal_diagram_height)
-
-  -- Apply initial constraints
-  pixel_width = math.max(200, math.min(600, pixel_width))
-  pixel_height =
-    math.max(min_text_height * diagram_height_ratio, math.min(max_text_height * diagram_height_ratio, pixel_height))
-
-  -- Convert to character dimensions and apply popup constraints
-  local char_cols = math.ceil(pixel_width / char_width)
-  local char_rows = math.ceil(pixel_height / char_height)
-
-  -- Apply popup size constraints
-  local constrained_char_cols = math.max(30, math.min(char_cols, math.floor(win_width * 0.9)))
-  local constrained_char_rows = math.max(5, math.min(char_rows, 40))
-
-  -- Convert back to final pixel dimensions
-  local final_pixel_width = constrained_char_cols * char_width
-  local final_pixel_height = constrained_char_rows * char_height
-
-  -- EXPERIMENTAL: Force very small images to counteract massive scaling
-  -- If 50px displays as ~42 rows, we need images about 13x smaller
-  final_pixel_width = 8 -- Extremely tiny width
-  final_pixel_height = 4 -- Extremely tiny height
-
-  return math.floor(final_pixel_width), math.floor(final_pixel_height)
-end
-
 --- Call Python script to generate railroad diagram
 ---@param components RegexplainerComponent[] # Components to render
 ---@param options RegexplainerOptions # Renderer options
 ---@param pattern_text string # Original regex pattern for caching
----@param override_width? number # Optional width override
----@param override_height? number # Optional height override
 ---@return string|nil base64_data # Base64 encoded PNG data, or nil on error
-local function generate_railroad_diagram(components, options, pattern_text, override_width, override_height)
+local function generate_railroad_diagram(components, options, pattern_text)
   local graphical_opts = options.graphical or {}
 
   -- Always generate at full readable size (Python will trim to actual content)
@@ -369,7 +295,7 @@ function M.after_render(buffer, lines, options, state)
       end
       return
     end
-    
+
     -- Add a small delay to ensure the window is fully rendered
     vim.defer_fn(function()
       local opts = state.graphical_opts or {}
