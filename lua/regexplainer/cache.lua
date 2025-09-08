@@ -37,7 +37,7 @@ end
 ---@param pattern string # The regex pattern
 ---@param width number # Image width
 ---@param height number # Image height
----@return string|nil base64_data # Cached base64 data, or nil if not found
+---@return table|nil # Cached data table {base64, actual_width, actual_height}, or nil if not found
 function M.get_cached_image(pattern, width, height)
   clean_expired_entries()
 
@@ -47,7 +47,11 @@ function M.get_cached_image(pattern, width, height)
   if entry then
     -- Update timestamp to refresh cache entry
     entry.timestamp = os.time()
-    return entry.base64_data
+    return {
+      base64 = entry.base64_data,
+      actual_width = entry.width,
+      actual_height = entry.height,
+    }
   end
 
   return nil
@@ -55,17 +59,19 @@ end
 
 --- Cache generated image data
 ---@param pattern string # The regex pattern
----@param width number # Image width
----@param height number # Image height
+---@param width number # Image generation width (for cache key)
+---@param height number # Image generation height (for cache key)
 ---@param base64_data string # Base64 encoded image data
-function M.cache_image(pattern, width, height, base64_data)
+---@param actual_width? number # Actual trimmed image width
+---@param actual_height? number # Actual trimmed image height
+function M.cache_image(pattern, width, height, base64_data, actual_width, actual_height)
   clean_expired_entries()
 
   local key = generate_cache_key(pattern, width, height)
   image_cache[key] = {
     base64_data = base64_data,
-    width = width,
-    height = height,
+    width = actual_width or width,
+    height = actual_height or height,
     timestamp = os.time(),
   }
 end

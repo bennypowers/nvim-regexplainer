@@ -90,8 +90,8 @@ local function generate_railroad_diagram(components, options, pattern_text, over
   local graphical_opts = options.graphical or {}
 
   -- Always generate at full readable size (Python will trim to actual content)
-  local width = 1200  -- Large enough for any railroad diagram
-  local height = 800  -- Large enough for any railroad diagram
+  local width = 1200 -- Large enough for any railroad diagram
+  local height = 800 -- Large enough for any railroad diagram
 
   -- Check cache first
   local cached_data = cache.get_cached_image(pattern_text, width, height)
@@ -159,8 +159,8 @@ local function generate_railroad_diagram(components, options, pattern_text, over
     return nil
   end
 
-  -- Cache the generated image data
-  cache.cache_image(pattern_text, width, height, parsed.base64)
+  -- Cache the generated image data using generation parameters as key, actual dimensions as values
+  cache.cache_image(pattern_text, width, height, parsed.base64, parsed.width, parsed.height)
 
   -- Return both base64 data and actual dimensions
   return {
@@ -247,53 +247,42 @@ function M.get_lines(components, options, state)
   end
 
   -- Get character cell dimensions for aspect ratio compensation
-  local hologram_state = require('hologram.state')
+  local hologram_state = require 'hologram.state'
   hologram_state.update_cell_size()
-  local cell_width = hologram_state.cell_size.x   -- pixels per character width
-  local cell_height = hologram_state.cell_size.y  -- pixels per character height
-  
+  local cell_width = hologram_state.cell_size.x -- pixels per character width
+  local cell_height = hologram_state.cell_size.y -- pixels per character height
+
   -- Calculate window constraints
   local current_win_width = vim.api.nvim_win_get_width(vim.api.nvim_get_current_win())
   local current_win_height = vim.api.nvim_win_get_height(vim.api.nvim_get_current_win())
   local max_popup_char_width = math.floor(current_win_width * 0.9) -- 90% of window width
   local max_popup_char_height = math.floor(current_win_height * 0.7) -- 70% of window height
-  
+
   -- Convert character constraints to effective pixel constraints
   -- Account for the fact that characters will stretch the image
   local max_effective_width = max_popup_char_width * cell_width
   local max_effective_height = max_popup_char_height * cell_height
-  
+
   local final_width, final_height
-  
+
   -- Check if image needs scaling to fit window
   if actual_width <= max_effective_width and actual_height <= max_effective_height then
     -- Image fits - use original size
     final_width = actual_width
     final_height = actual_height
-    
+
     if options.debug then
-      utils.notify(
-        string.format('Image fits: %dx%d pixels', actual_width, actual_height),
-        'info'
-      )
+      utils.notify(string.format('Image fits: %dx%d pixels', actual_width, actual_height), 'info')
     end
   else
     -- Image too large - scale down while preserving aspect ratio
     local scale_x = max_effective_width / actual_width
-    local scale_y = max_effective_height / actual_height  
+    local scale_y = max_effective_height / actual_height
     local scale = math.min(scale_x, scale_y) -- Preserve aspect ratio
-    
+
     final_width = math.floor(actual_width * scale)
     final_height = math.floor(actual_height * scale)
-    
-    if options.debug then
-      utils.notify(
-        string.format('Scaling down: %dx%d → %dx%d pixels (scale: %.3f)', 
-          actual_width, actual_height, final_width, final_height, scale),
-        'info'
-      )
-    end
-    
+
     -- Regenerate at the correct size
     diagram_result = generate_railroad_diagram(components, options, pattern_text, final_width, final_height)
     if diagram_result and diagram_result.base64 then
@@ -308,14 +297,6 @@ function M.get_lines(components, options, state)
   -- Set popup dimensions (converting from pixels to characters)
   local popup_char_width = math.ceil(final_width / cell_width)
   local popup_char_height = math.ceil(final_height / cell_height)
-
-  if options.debug then
-    utils.notify(
-      string.format('Cell size: %.1fx%.1f pixels, final image: %dx%d pixels, popup: %dx%d chars', 
-        cell_width, cell_height, final_width, final_height, popup_char_width, popup_char_height),
-      'info'
-    )
-  end
 
   -- Store image data in state for set_lines to use
   state.image_data = base64_data
@@ -363,17 +344,6 @@ function M.after_render(buffer, lines, options, state)
 
   -- Display railroad diagram image if we have image data
   if state and state.image_data then
-    if options.debug then
-      utils.notify(
-        string.format(
-          'Displaying image: %d bytes to buffer %s',
-          #state.image_data,
-          buffer and buffer.bufnr or 'current'
-        ),
-        'info'
-      )
-    end
-
     -- Add a small delay to ensure the window is fully rendered
     vim.defer_fn(function()
       local opts = state.graphical_opts or {}
@@ -381,19 +351,13 @@ function M.after_render(buffer, lines, options, state)
       -- Get the buffer number for the popup/display window
       local target_bufnr = buffer and buffer.bufnr or vim.api.nvim_get_current_buf()
 
-      if options.debug then
-        utils.notify(string.format('Calling graphics.display_image with bufnr: %s', target_bufnr), 'info')
-      end
-
       local success = graphics.display_image(state.image_data, {
         width = opts.width,
         height = opts.height,
         buffer = target_bufnr, -- Pass buffer info to graphics module
       })
 
-      if options.debug then
-        utils.notify(string.format('graphics.display_image returned: %s', success and 'true' or 'false'), 'info')
-      end
+      -- Pattern popup will be created in popup buffer's after() callback
     end, 200) -- 200ms delay
   else
     if options.debug then

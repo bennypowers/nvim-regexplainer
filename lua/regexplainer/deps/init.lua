@@ -12,7 +12,7 @@ local M = {}
 local default_config = {
   auto_install = true,
   python_cmd = nil, -- Will be auto-detected
-  venv_path = nil,  -- Will be auto-generated
+  venv_path = nil, -- Will be auto-generated
   check_interval = 3600, -- 1 hour
 }
 
@@ -28,8 +28,8 @@ local _cache = {
 --- Get plugin directory path
 ---@return string
 local function get_plugin_dir()
-  local source = debug.getinfo(1, "S").source:sub(2)
-  return vim.fn.fnamemodify(source, ":h:h:h")
+  local source = debug.getinfo(1, 'S').source:sub(2)
+  return vim.fn.fnamemodify(source, ':h:h:h')
 end
 
 --- Get virtual environment path
@@ -39,7 +39,7 @@ local function get_venv_path(config)
   if config.venv_path then
     return vim.fn.expand(config.venv_path)
   end
-  return vim.fn.join({get_plugin_dir(), '.venv'}, '/')
+  return vim.fn.join({ get_plugin_dir(), '.venv' }, '/')
 end
 
 --- Get virtual environment python executable path
@@ -47,11 +47,11 @@ end
 ---@return string
 local function get_venv_python_path(config)
   local venv_path = get_venv_path(config)
-  local is_windows = vim.fn.has('win32') == 1 or vim.fn.has('win64') == 1
+  local is_windows = vim.fn.has 'win32' == 1 or vim.fn.has 'win64' == 1
   if is_windows then
-    return vim.fn.join({venv_path, 'Scripts', 'python.exe'}, '/')
+    return vim.fn.join({ venv_path, 'Scripts', 'python.exe' }, '/')
   else
-    return vim.fn.join({venv_path, 'bin', 'python'}, '/')
+    return vim.fn.join({ venv_path, 'bin', 'python' }, '/')
   end
 end
 
@@ -68,26 +68,26 @@ end
 ---@return boolean success, string stdout, string stderr
 local function run_command(cmd, timeout)
   timeout = timeout or 30000 -- 30 second default timeout
-  
+
   local result = vim.fn.system(cmd)
   local exit_code = vim.v.shell_error
-  
-  return exit_code == 0, result, exit_code ~= 0 and result or ""
+
+  return exit_code == 0, result, exit_code ~= 0 and result or ''
 end
 
 --- Find suitable Python executable
 ---@return string|nil python_cmd, string|nil version
 local function find_python()
-  local candidates = {'python3', 'python'}
-  
+  local candidates = { 'python3', 'python' }
+
   for _, cmd in ipairs(candidates) do
     if is_executable(cmd) then
       local success, output = run_command(cmd .. ' --version 2>&1')
       if success then
-        local version = output:match('Python (%d+%.%d+%.%d+)')
+        local version = output:match 'Python (%d+%.%d+%.%d+)'
         if version then
           -- Check if version is >= 3.9
-          local major, minor = version:match('(%d+)%.(%d+)')
+          local major, minor = version:match '(%d+)%.(%d+)'
           if tonumber(major) >= 3 and tonumber(minor) >= 9 then
             return cmd, version
           end
@@ -95,7 +95,7 @@ local function find_python()
       end
     end
   end
-  
+
   return nil, nil
 end
 
@@ -106,20 +106,19 @@ local function check_python_packages(python_cmd)
   local required_packages = {
     'railroad',
     'PIL', -- Pillow
-    'cairosvg'
+    'cairosvg',
   }
-  
+
   local missing = {}
-  
+
   for _, package in ipairs(required_packages) do
-    local cmd = string.format('%s -c "import %s" 2>/dev/null', 
-                             vim.fn.shellescape(python_cmd), package)
+    local cmd = string.format('%s -c "import %s" 2>/dev/null', vim.fn.shellescape(python_cmd), package)
     local success = run_command(cmd)
     if not success then
       table.insert(missing, package)
     end
   end
-  
+
   return #missing == 0, missing
 end
 
@@ -137,27 +136,25 @@ end
 ---@return boolean success, string error_msg
 local function create_venv(config, python_cmd)
   local venv_path = get_venv_path(config)
-  
+
   -- Create parent directory if it doesn't exist
   local parent_dir = vim.fn.fnamemodify(venv_path, ':h')
   if vim.fn.isdirectory(parent_dir) == 0 then
     local success = vim.fn.mkdir(parent_dir, 'p')
     if success == 0 then
-      return false, "Failed to create parent directory: " .. parent_dir
+      return false, 'Failed to create parent directory: ' .. parent_dir
     end
   end
-  
+
   -- Create virtual environment
-  local cmd = string.format('%s -m venv %s', 
-                           vim.fn.shellescape(python_cmd), 
-                           vim.fn.shellescape(venv_path))
-  
+  local cmd = string.format('%s -m venv %s', vim.fn.shellescape(python_cmd), vim.fn.shellescape(venv_path))
+
   local success, stdout, stderr = run_command(cmd, 60000) -- 1 minute timeout
   if not success then
-    return false, "Failed to create virtual environment: " .. stderr
+    return false, 'Failed to create virtual environment: ' .. stderr
   end
-  
-  return true, ""
+
+  return true, ''
 end
 
 --- Install packages in virtual environment
@@ -166,11 +163,11 @@ end
 ---@return boolean success, string error_msg
 local function install_packages(config, packages)
   local venv_python = get_venv_python_path(config)
-  
+
   if vim.fn.filereadable(venv_python) ~= 1 then
-    return false, "Virtual environment not found: " .. venv_python
+    return false, 'Virtual environment not found: ' .. venv_python
   end
-  
+
   -- Map package names for pip installation
   local pip_packages = {}
   for _, pkg in ipairs(packages) do
@@ -182,18 +179,17 @@ local function install_packages(config, packages)
       table.insert(pip_packages, pkg)
     end
   end
-  
+
   local packages_str = table.concat(vim.tbl_map(vim.fn.shellescape, pip_packages), ' ')
-  local cmd = string.format('%s -m pip install --no-warn-script-location %s', 
-                           vim.fn.shellescape(venv_python), 
-                           packages_str)
-  
+  local cmd =
+    string.format('%s -m pip install --no-warn-script-location %s', vim.fn.shellescape(venv_python), packages_str)
+
   local success, stdout, stderr = run_command(cmd, 120000) -- 2 minute timeout
   if not success then
-    return false, "Failed to install packages: " .. stderr
+    return false, 'Failed to install packages: ' .. stderr
   end
-  
-  return true, ""
+
+  return true, ''
 end
 
 --- Setup virtual environment with required packages
@@ -203,9 +199,9 @@ local function setup_venv(config)
   -- Find Python
   local python_cmd, version = find_python()
   if not python_cmd then
-    return false, "No suitable Python installation found (requires Python 3.9+)"
+    return false, 'No suitable Python installation found (requires Python 3.9+)'
   end
-  
+
   -- Create venv if it doesn't exist
   if not venv_exists(config) then
     local success, err = create_venv(config, python_cmd)
@@ -213,11 +209,11 @@ local function setup_venv(config)
       return false, err
     end
   end
-  
+
   -- Check what packages are missing
   local venv_python = get_venv_python_path(config)
   local packages_ok, missing_packages = check_python_packages(venv_python)
-  
+
   -- Install missing packages
   if not packages_ok then
     local success, err = install_packages(config, missing_packages)
@@ -225,8 +221,8 @@ local function setup_venv(config)
       return false, err
     end
   end
-  
-  return true, ""
+
+  return true, ''
 end
 
 --- Get Python executable for railroad generation
@@ -235,13 +231,13 @@ end
 ---@return string|nil python_cmd, string|nil error_msg
 function M.get_python_cmd(config, options)
   config = vim.tbl_deep_extend('force', default_config, config or {})
-  
+
   -- Check cache validity
   local now = os.time()
   if now - _cache.last_check < config.check_interval and _cache.python_cmd then
     return _cache.python_cmd, nil
   end
-  
+
   -- Try user-specified python command first
   if config.python_cmd then
     local success, missing = check_python_packages(config.python_cmd)
@@ -250,10 +246,10 @@ function M.get_python_cmd(config, options)
       _cache.last_check = now
       return config.python_cmd, nil
     elseif not config.auto_install then
-      return nil, string.format("Python packages missing: %s", table.concat(missing, ', '))
+      return nil, string.format('Python packages missing: %s', table.concat(missing, ', '))
     end
   end
-  
+
   -- Try system Python
   local system_python, version = find_python()
   if system_python then
@@ -263,10 +259,10 @@ function M.get_python_cmd(config, options)
       _cache.last_check = now
       return system_python, nil
     elseif not config.auto_install then
-      return nil, string.format("Python packages missing: %s", table.concat(missing, ', '))
+      return nil, string.format('Python packages missing: %s', table.concat(missing, ', '))
     end
   end
-  
+
   -- Try virtual environment
   if venv_exists(config) then
     local venv_python = get_venv_python_path(config)
@@ -277,30 +273,30 @@ function M.get_python_cmd(config, options)
       return venv_python, nil
     end
   end
-  
+
   -- Auto-install if enabled
   if config.auto_install then
     if options and options.debug then
-      utils.notify("Installing Python dependencies for graphical mode...", 'info')
+      utils.notify('Installing Python dependencies for graphical mode...', 'info')
     end
-    
+
     local success, err = setup_venv(config)
     if success then
       local venv_python = get_venv_python_path(config)
       _cache.python_cmd = venv_python
       _cache.last_check = now
-      
+
       if options and options.debug then
-        utils.notify("Python dependencies installed successfully", 'info')
+        utils.notify('Python dependencies installed successfully', 'info')
       end
-      
+
       return venv_python, nil
     else
       return nil, err
     end
   end
-  
-  return nil, "Python dependencies not available and auto_install is disabled"
+
+  return nil, 'Python dependencies not available and auto_install is disabled'
 end
 
 --- Check dependency status for health check
@@ -308,7 +304,7 @@ end
 ---@return table status
 function M.check_health(config)
   config = vim.tbl_deep_extend('force', default_config, config or {})
-  
+
   local status = {
     python_found = false,
     python_version = nil,
@@ -316,15 +312,15 @@ function M.check_health(config)
     packages_available = false,
     missing_packages = {},
     venv_path = get_venv_path(config),
-    error = nil
+    error = nil,
   }
-  
+
   -- Check system Python
   local python_cmd, version = find_python()
   if python_cmd then
     status.python_found = true
     status.python_version = version
-    
+
     -- Check system packages
     local success, missing = check_python_packages(python_cmd)
     if success then
@@ -333,7 +329,7 @@ function M.check_health(config)
       status.missing_packages = missing
     end
   end
-  
+
   -- Check virtual environment
   status.venv_exists = venv_exists(config)
   if status.venv_exists then
@@ -344,7 +340,7 @@ function M.check_health(config)
       status.missing_packages = {}
     end
   end
-  
+
   return status
 end
 
