@@ -344,6 +344,14 @@ function M.after_render(buffer, lines, options, state)
 
   -- Display railroad diagram image if we have image data
   if state and state.image_data then
+    -- Skip image display for split mode - it handles its own image display
+    if buffer and buffer.type == 'NuiSplit' then
+      if options.debug then
+        utils.notify('Skipping after_render image display for split mode', 'info')
+      end
+      return
+    end
+    
     -- Add a small delay to ensure the window is fully rendered
     vim.defer_fn(function()
       local opts = state.graphical_opts or {}
