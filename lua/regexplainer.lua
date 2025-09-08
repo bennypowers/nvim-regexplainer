@@ -2,6 +2,7 @@ local component = require 'regexplainer.component'
 local tree      = require 'regexplainer.utils.treesitter'
 local utils     = require 'regexplainer.utils'
 local Buffers   = require 'regexplainer.buffers'
+local cache     = require 'regexplainer.cache'
 
 local get_node_text = vim.treesitter.get_node_text
 local deep_extend = vim.tbl_deep_extend
@@ -216,6 +217,13 @@ function M.debug_components()
   ---@type any
   local mode = 'debug'
   show_for_real({ auto = false, display = 'split', mode = mode })
+end
+
+--- Clear the image cache
+--
+function M.clear_cache()
+  cache.clear_cache()
+  utils.notify('Regexplainer image cache cleared', 'info')
 end
 
 return M

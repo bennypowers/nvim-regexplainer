@@ -47,7 +47,7 @@ function M.display_image(base64_data, options)
     return false
   end
 
-  local result = protocol.display_image(base64_data, options.width, options.height, options.buffer)
+  local result = protocol.display_image(base64_data, options)
 
   return result
 end
