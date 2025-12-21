@@ -49,8 +49,27 @@ function M.setup()
 
   vim.cmd [[packloadall]]
 
+  -- Initialize nvim-treesitter to make commands available
+  pcall(require, 'nvim-treesitter')
+
+  -- Configure parser install directory (for compatibility with older versions)
+  local ok, configs = pcall(require, 'nvim-treesitter.configs')
+  if ok and configs.setup then
+    pcall(configs.setup, {
+      parser_install_dir = parser_install_dir,
+    })
+  end
+
+  -- Install parsers using the command if available, otherwise use the API
   for _, lang in ipairs(langs) do
-    vim.cmd('TSInstallSync ' .. lang)
+    local install_ok = pcall(vim.cmd, 'TSInstallSync ' .. lang)
+    if not install_ok then
+      -- Fallback to direct API if command doesn't exist
+      local install = pcall(require, 'nvim-treesitter.install')
+      if install then
+        pcall(require('nvim-treesitter.install').update, { with_sync = true }, lang)
+      end
+    end
   end
 end
 
