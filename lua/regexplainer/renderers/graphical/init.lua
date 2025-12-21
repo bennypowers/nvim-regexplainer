@@ -297,7 +297,7 @@ function M.after_render(buffer, lines, options, state)
     end
 
     -- Add a small delay to ensure the window is fully rendered
-    vim.defer_fn(function()
+    local timer = vim.defer_fn(function()
       local opts = state.graphical_opts or {}
 
       -- Get the buffer number for the popup/display window
@@ -311,6 +311,7 @@ function M.after_render(buffer, lines, options, state)
 
       -- Pattern popup will be created in popup buffer's after() callback
     end, 200) -- 200ms delay
+    buffers.register_timer(timer)
   else
     if options.debug then
       utils.notify('No image data in state - not displaying image', 'warning')

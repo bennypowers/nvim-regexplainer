@@ -1,4 +1,4 @@
-local utils  = require 'regexplainer.utils'
+local utils = require 'regexplainer.utils'
 
 local get_current_win = vim.api.nvim_get_current_win
 local get_current_buf = vim.api.nvim_get_current_buf
@@ -33,19 +33,20 @@ local timers = {}
 --
 local function close_timers()
   for _, timer in ipairs(timers) do
-    timer:close()
+    pcall(timer.close, timer)
   end
+  timers = {}
 end
 
 ---@param options RegexplainerOptions
 ---@return RegexplainerBuffer
 local function get_buffer(options, state)
   if options.display == 'register' then
-    return require'regexplainer.buffers.register'.get_buffer(options, state)
+    return require('regexplainer.buffers.register').get_buffer(options, state)
   elseif options.display == 'split' then
-    return require'regexplainer.buffers.split'.get_buffer(options, state)
+    return require('regexplainer.buffers.split').get_buffer(options, state)
   else --if options.display == 'popup' then
-    return require'regexplainer.buffers.popup'.get_buffer(options, state)
+    return require('regexplainer.buffers.popup').get_buffer(options, state)
   end
 end
 
@@ -66,7 +67,7 @@ function M.get_buffer(options)
 
   local buffer = get_buffer(options, state)
 
-  table.insert(all_buffers, buffer);
+  table.insert(all_buffers, buffer)
 
   state.last.parent = {
     winnr = get_current_win(),
@@ -88,7 +89,7 @@ function M.render(buffer, renderer, components, options, state)
   buffer:init(lines, options, state)
   renderer.set_lines(buffer, lines)
   buffer:after(lines, options, state)
-  
+
   -- Call renderer-specific after hook if available
   if renderer.after_render then
     renderer.after_render(buffer, lines, options, state)
@@ -119,6 +120,7 @@ end
 --- Hide all known Regexplainer buffers
 --
 function M.hide_all()
+  M.clear_timers()
   for _, buffer in ipairs(all_buffers) do
     M.kill_buffer(buffer)
   end
@@ -171,14 +173,14 @@ end
 
 ---Is it a popup buffer?
 ---@type fun(buffer:RegexplainerBuffer):boolean
-M.is_popup = is_buftype('NuiPopup')
+M.is_popup = is_buftype 'NuiPopup'
 
 ---Is it a split buffer?
 ---@type fun(buffer:RegexplainerBuffer):boolean
-M.is_split = is_buftype('NuiSplit')
+M.is_split = is_buftype 'NuiSplit'
 
 ---Is it a scratch buffer?
 ---@type fun(buffer:RegexplainerBuffer):boolean
-M.is_scratch = is_buftype('Scratch')
+M.is_scratch = is_buftype 'Scratch'
 
 return M

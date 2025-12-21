@@ -43,7 +43,7 @@ end
 
 ---@param original_node TSNode regex_pattern node
 ---@return TSNode|nil, integer|nil, string|nil
-local function get_pattern(original_node)
+function M.get_pattern(original_node)
   local buf = vim.api.nvim_create_buf(false, false)
   vim.api.nvim_buf_set_lines(buf, 0, 1,true, { get_node_text(original_node, 0) })
   local node
@@ -130,29 +130,40 @@ function M.is_modifier(node)
       or M.is_count_quantifier(node)
 end
 
---- Using treesitter, find the current node at cursor, and traverse up to the
---- document root to determine if we're on a regexp
----@return TSNode|nil, integer|nil, string|nil
+--- Using treesitter, find the current node at cursor
+---@return TSNode|nil, string|nil
 --
-function M.get_regexp_pattern_at_cursor()
+function M.get_regex_node_at_cursor()
   local parser = get_parser(0)
         parser:parse()
   local query = get_query(parser:lang(), 'regexplainer')
   if not query then
-    return nil, nil, 'could not load regexplainer query for ' .. parser:lang()
+    return nil, 'could not load regexplainer query for ' .. parser:lang()
   end
   local cursor_node = get_node()
   if not cursor_node then
-    return nil, nil, 'could not get node at cursor'
+    return nil, 'could not get node at cursor'
   end
   local row, col = cursor_node:range()
   for id, node in query:iter_captures(cursor_node:tree():root(), 0, row, row + 1) do
     local name = query.captures[id] -- name of the capture in the query
     if name == 'regexplainer.pattern' and is_in_node_range(node, row, col) then
-      return get_pattern(node)
+      return node
     end
   end
-  return nil, nil, 'no node'
+  return nil, 'no node'
+end
+
+--- Using treesitter, find the current node at cursor, and traverse up to the
+--- document root to determine if we're on a regexp
+---@return TSNode|nil, integer|nil, string|nil
+--
+function M.get_regexp_pattern_at_cursor()
+  local node, err = M.get_regex_node_at_cursor()
+  if node then
+    return M.get_pattern(node)
+  end
+  return nil, nil, err
 end
 
 return M

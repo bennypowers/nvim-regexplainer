@@ -102,13 +102,43 @@ local default_config = {
 --
 local local_config = deep_extend('keep', default_config, {})
 
+local last_node = nil
+local last_range = nil
+
 --- Show the explainer for the regexp under the cursor
 ---@param options? RegexplainerOptions overrides for this call
 ---@return nil|number bufnr the bufnr of the regexplaination
 --
 local function show_for_real(options)
   options = deep_extend('force', local_config, options or {})
-  local node, scratchnr, error = tree.get_regexp_pattern_at_cursor()
+
+  local original_node, err = tree.get_regex_node_at_cursor()
+
+  -- Early return if still on same regex (range-based check)
+  if original_node and last_range and Buffers.is_open() then
+    local start_row, start_col, end_row, end_col = original_node:range()
+    if last_range[1] == start_row
+       and last_range[2] == start_col
+       and last_range[3] == end_row
+       and last_range[4] == end_col then
+      -- Same regex range, don't clear timers or re-render
+      return
+    end
+  end
+
+  -- Regex changed or cursor left - clear pending operations
+  Buffers.clear_timers()
+
+  local node, scratchnr, error
+  if original_node then
+    node, scratchnr, error = tree.get_pattern(original_node)
+    last_node = original_node
+    local start_row, start_col, end_row, end_col = original_node:range()
+    last_range = { start_row, start_col, end_row, end_col }
+  else
+    error = err
+    last_range = nil
+  end
 
   if error and options.debug then
     utils.notify('Rexexplainer: ' .. error, 'debug')
@@ -130,7 +160,7 @@ local function show_for_real(options)
       renderer = require 'regexplainer.renderers.debug'
     end
 
-    local start_row, start_col, end_row, end_col = node:range()
+    local start_row, start_col, end_row, end_col = original_node:range()
     local state = {
       full_regexp_text = get_node_text(node, scratchnr),
       full_regexp_range = {
@@ -194,6 +224,8 @@ function M.setup(config)
       callback = function()
         if tree.has_regexp_at_cursor() and not disable_auto then
           show_for_real()
+        else
+          M.hide()
         end
       end,
     })
@@ -205,6 +237,8 @@ end
 --- Hide any displayed regexplainer buffers
 --
 function M.hide()
+  last_node = nil
+  last_range = nil
   Buffers.hide_all()
 end
 
@@ -222,6 +256,7 @@ end
 --
 function M.teardown()
   local_config = vim.tbl_deep_extend('keep', {}, default_config)
+  last_range = nil
   Buffers.clear_timers()
   pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
 end
