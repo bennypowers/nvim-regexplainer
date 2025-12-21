@@ -50,9 +50,7 @@ function M.setup()
   vim.cmd [[packloadall]]
 
   for _, lang in ipairs(langs) do
-    if not require('nvim-treesitter.parsers').has_parser(lang) then
-      vim.cmd('TSInstallSync ' .. lang)
-    end
+    vim.cmd('TSInstallSync ' .. lang)
   end
 end
 
