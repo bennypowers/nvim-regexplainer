@@ -17,6 +17,6 @@ test:
 		nvim \
 			--headless \
 			--noplugin \
-			-u tests/mininit.lua \
+			-u tests/bootstrap.lua \
 			-c "PlenaryBustedDirectory tests/regexplainer/ {minimal_init='tests/mininit.lua',sequential=true,keep_going=false}"\
 			-c "qa!"
