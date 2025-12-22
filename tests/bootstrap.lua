@@ -35,9 +35,16 @@ for _, lang in ipairs(parsers) do
       end
     end
 
-    -- Verify the file exists
-    if vim.fn.filereadable(parser_file) ~= 1 then
-      error(string.format('%s parser installation completed but .so file not found at %s', lang, parser_file))
+    -- pwait() can return before the file is fully written
+    -- Poll for a short time to ensure the .so file exists
+    local start = vim.loop.now()
+    local file_wait_timeout = 5000  -- 5 seconds should be plenty
+    while vim.fn.filereadable(parser_file) ~= 1 do
+      if vim.loop.now() - start > file_wait_timeout then
+        error(string.format('%s parser installation completed but .so file not found at %s after %ds',
+          lang, parser_file, file_wait_timeout / 1000))
+      end
+      vim.wait(50)
     end
 
     print(lang .. ' parser installed')
