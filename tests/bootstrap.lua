@@ -8,6 +8,8 @@ Setup.setup()
 
 local parsers = { 'html', 'javascript', 'typescript', 'regex' }
 
+local MAX_WAIT = 120000
+
 local ts = require 'nvim-treesitter'
 ts.setup { install_dir = Setup.parser_install_dir }
 
@@ -16,12 +18,11 @@ local task = ts.install(parsers)
 
 -- Wait for installation with timeout (CI may have issues with :wait())
 if task and task.wait then
-  task:wait(600000)
+  task:wait(MAX_WAIT)
 end
 
 -- Additional safety: poll until all parser .so files actually exist
 -- This ensures parsers are ready regardless of :wait() behavior
-local max_wait_ms = 60000
 local start_time = vim.loop.now()
 
 while true do
@@ -38,7 +39,7 @@ while true do
     break
   end
 
-  if vim.loop.now() - start_time > max_wait_ms then
+  if vim.loop.now() - start_time > MAX_WAIT then
     error('Timeout: parsers not installed after 60s. Check ' .. Setup.parser_install_dir .. '/parser/')
   end
 
