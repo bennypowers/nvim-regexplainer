@@ -30,17 +30,23 @@ local langs = {
 }
 
 function M.setup()
+  local parser_install_dir = M.root '.tests/site'
+
   vim.cmd [[
     set noswapfile
     filetype on
-    set runtimepath=$VIMRUNTIME
-    runtime plugin/regexplainer.lua
   ]]
 
-  local parser_install_dir = M.root '.tests/site'
-  vim.opt.runtimepath:prepend(parser_install_dir)
-  vim.opt.runtimepath:append(M.root())
-  vim.opt.runtimepath:append(M.root 'tests')
+  -- Set runtimepath with our test directories first
+  vim.opt.runtimepath = {
+    parser_install_dir,
+    '$VIMRUNTIME',
+    M.root(),
+    M.root 'tests',
+  }
+
+  vim.cmd [[runtime plugin/regexplainer.lua]]
+
   vim.opt.packpath = { M.root '.tests/site' }
 
   M.load 'MunifTanjim/nui.nvim'

@@ -2,7 +2,7 @@ SHELL:=/usr/bin/env bash
 .PHONY: test run_tests watch ci unload
 
 clean:
-	@rm -rf vendor
+	@rm -rf vendor .tests
 
 watch:
 	@echo "Testing..."

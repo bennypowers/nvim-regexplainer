@@ -1,24 +1,22 @@
 local regexplainer = require 'regexplainer'
 local buffers = require 'regexplainer.buffers'
-local parsers = require "nvim-treesitter.parsers"
 
 local get_parser = vim.treesitter.get_parser
 local get_node_text = vim.treesitter.get_node_text
 local bd = vim.api.nvim_buf_delete
 
 local query = vim.treesitter.query.get('javascript', 'regexplainer_test')
-if not query then error('could not get query') end
+if not query then
+  error 'could not get query'
+end
 
 local function trim(s)
-  return (string.gsub(s, "^%s*(.-)%s*$", "%1"))
+  return (string.gsub(s, '^%s*(.-)%s*$', '%1'))
 end
 
 local function editfile(testfile)
-  vim.cmd("e! " .. testfile)
-  assert.are.same(
-    vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ":p"),
-    vim.fn.fnamemodify(testfile, ":p")
-  )
+  vim.cmd('e! ' .. testfile)
+  assert.are.same(vim.fn.fnamemodify(vim.api.nvim_buf_get_name(0), ':p'), vim.fn.fnamemodify(testfile, ':p'))
 end
 
 ---Parse a JSDoc comment, returning the markdown description
@@ -26,12 +24,8 @@ end
 ---@return string description JSDoc description, without /* * */
 local function get_expected_from_jsdoc(comment)
   local lines = {}
-  for line in comment:gmatch("([^\n]*)\n?") do
-    local clean = line
-        :gsub('^/%*%*', '')
-        :gsub('%*/$', '')
-        :gsub('%s+%* ?', '', 1)
-        :gsub('@example EXPECTED%: ?', '')
+  for line in comment:gmatch '([^\n]*)\n?' do
+    local clean = line:gsub('^/%*%*', ''):gsub('%*/$', ''):gsub('%s+%* ?', '', 1):gsub('@example EXPECTED%: ?', '')
     table.insert(lines, clean)
   end
 
@@ -49,7 +43,7 @@ local function get_cases()
   for id, node in query:iter_captures(tree:root(), 0) do
     local name = query.captures[id] -- name of the capture in the query
     if name == 'test.comment' then
-      local jsdoc_text = get_node_text(node, 0);
+      local jsdoc_text = get_node_text(node, 0)
       next.expected = get_expected_from_jsdoc(jsdoc_text)
     elseif name == 'test.pattern' then
       next.pattern = get_node_text(node, 0)
@@ -82,7 +76,7 @@ local function setup_test_buffer(pattern)
   local newbuf = vim.api.nvim_create_buf(true, false)
   vim.api.nvim_win_set_buf(0, newbuf)
   vim.opt_local.filetype = 'javascript'
-  vim.api.nvim_set_current_line('/'..pattern..'/;')
+  vim.api.nvim_set_current_line('/' .. pattern .. '/;')
   vim.treesitter.start(newbuf, 'javascript')
   return newbuf
 end
@@ -92,10 +86,10 @@ local function show_and_get_regexplainer_buffer(bufnr)
   repeat
     get_parser(0):parse()
     vim.uv.sleep(1)
-    local row, col = unpack(vim.api.nvim_win_get_cursor(0));
-    vim.api.nvim_win_set_cursor(0, {row, col + 1})
+    local row, col = unpack(vim.api.nvim_win_get_cursor(0))
+    vim.api.nvim_win_set_cursor(0, { row, col + 1 })
     local cursor_node = vim.treesitter.get_node()
-    if (cursor_node) then
+    if cursor_node then
       for id, node in query:iter_captures(cursor_node, bufnr) do
         if query[id] == 'test.pattern' and node then
           local range = node:range()
@@ -103,7 +97,7 @@ local function show_and_get_regexplainer_buffer(bufnr)
         end
       end
     end
-    regexplainer.show({debug = true})
+    regexplainer.show { debug = true }
     buffer = buffers.get_last_buffer()
   until buffer
   return buffer.bufnr
@@ -129,9 +123,9 @@ function M.clear_test_state()
   vim.fn.setreg(M.register_name, '')
   regexplainer.teardown() -- Clear regexplainer state
   clear_buffers()
-  assert(#vim.api.nvim_list_bufs() == 1, "Failed to properly clear buffers")
-  assert(#vim.api.nvim_tabpage_list_wins(0) == 1, "Failed to properly clear tab")
-  assert(vim.fn.getreg(M.register_name) == '', "Failed to properly clear register")
+  assert(#vim.api.nvim_list_bufs() == 1, 'Failed to properly clear buffers')
+  assert(#vim.api.nvim_tabpage_list_wins(0) == 1, 'Failed to properly clear tab')
+  assert(vim.fn.getreg(M.register_name) == '', 'Failed to properly clear register')
 end
 
 ---@param pattern string regexp pattern to test
