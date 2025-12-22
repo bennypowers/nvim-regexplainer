@@ -43,7 +43,7 @@ end
 ---containing the expected regexplainer narrative result
 local function get_cases()
   local results = {}
-  local parser = parsers.get_parser(0)
+  local parser = get_parser(0)
   local tree = parser:parse()[1]
   local next = {}
   for id, node in query:iter_captures(tree:root(), 0) do

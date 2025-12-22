@@ -37,8 +37,8 @@ function M.setup()
     runtime plugin/regexplainer.lua
   ]]
 
-  local parser_install_dir = M.root '.tests/share/treesitter'
-  vim.opt.runtimepath:append(parser_install_dir)
+  local parser_install_dir = M.root '.tests/site'
+  vim.opt.runtimepath:prepend(parser_install_dir)
   vim.opt.runtimepath:append(M.root())
   vim.opt.runtimepath:append(M.root 'tests')
   vim.opt.packpath = { M.root '.tests/site' }
@@ -49,28 +49,30 @@ function M.setup()
 
   vim.cmd [[packloadall]]
 
-  -- Initialize nvim-treesitter to make commands available
-  pcall(require, 'nvim-treesitter')
+  -- Configure parser install directory for nvim-treesitter
+  -- Try modern API first (nvim-treesitter.setup with install_dir)
+  local ok, ts = pcall(require, 'nvim-treesitter')
+  if ok and ts.setup then
+    pcall(ts.setup, {
+      install_dir = parser_install_dir,
+    })
+  end
 
-  -- Configure parser install directory (for compatibility with older versions)
-  local ok, configs = pcall(require, 'nvim-treesitter.configs')
-  if ok and configs.setup then
+  -- Fallback to old API for backward compatibility
+  local ok_old, configs = pcall(require, 'nvim-treesitter.configs')
+  if ok_old and configs.setup then
     pcall(configs.setup, {
       parser_install_dir = parser_install_dir,
     })
   end
 
-  -- Install parsers using the command if available, otherwise use the API
+  -- Install parsers (TSInstall! is idempotent and non-interactive)
   for _, lang in ipairs(langs) do
-    local install_ok = pcall(vim.cmd, 'TSInstallSync ' .. lang)
-    if not install_ok then
-      -- Fallback to direct API if command doesn't exist
-      local install = pcall(require, 'nvim-treesitter.install')
-      if install then
-        pcall(require('nvim-treesitter.install').update, { with_sync = true }, lang)
-      end
-    end
+    pcall(vim.cmd, 'TSInstall! ' .. lang)
   end
+
+  -- Wait for async installation to complete
+  vim.wait(2000, function() return false end)
 end
 
 M.setup()
