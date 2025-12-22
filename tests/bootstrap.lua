@@ -8,40 +8,38 @@ Setup.setup()
 
 local parsers = { 'html', 'javascript', 'typescript', 'regex' }
 
-local MAX_WAIT = 120000
+-- Setup is already called in Setup.setup(), so install_dir is configured
+-- Just verify the config
+local config = require('nvim-treesitter.config')
+local parser_dir = config.get_install_dir('parser')
+print('Parser install directory: ' .. parser_dir)
 
-local ts = require 'nvim-treesitter'
-ts.setup { install_dir = Setup.parser_install_dir }
+-- Install parsers using the async API, but poll for actual file existence
+local install = require('nvim-treesitter.install')
 
--- Start installation asynchronously
-local task = ts.install(parsers)
+for _, lang in ipairs(parsers) do
+  local parser_file = parser_dir .. '/' .. lang .. '.so'
 
--- Wait for installation with timeout (CI may have issues with :wait())
-if task and task.wait then
-  task:wait(MAX_WAIT)
-end
+  if vim.fn.filereadable(parser_file) ~= 1 then
+    print('Installing ' .. lang .. '...')
 
--- Additional safety: poll until all parser .so files actually exist
--- This ensures parsers are ready regardless of :wait() behavior
-local start_time = vim.loop.now()
+    -- Start async installation (don't rely on :wait() - it's broken in CI)
+    install.install({ lang }, { summary = false })
 
-while true do
-  local all_ready = true
-  for _, lang in ipairs(parsers) do
-    local parser_file = Setup.parser_install_dir .. '/parser/' .. lang .. '.so'
-    if vim.fn.filereadable(parser_file) ~= 1 then
-      all_ready = false
-      break
+    -- Poll for completion by checking if the .so file exists
+    -- This is more reliable than :wait() in CI
+    local start = vim.loop.now()
+    local timeout = 60000  -- 60 seconds per parser
+
+    while vim.fn.filereadable(parser_file) ~= 1 do
+      if vim.loop.now() - start > timeout then
+        error(string.format('Timeout: %s parser not installed after %ds', lang, timeout / 1000))
+      end
+      vim.wait(100)
     end
-  end
 
-  if all_ready then
-    break
+    print(lang .. ' parser installed')
   end
-
-  if vim.loop.now() - start_time > MAX_WAIT then
-    error('Timeout: parsers not installed after 60s. Check ' .. Setup.parser_install_dir .. '/parser/')
-  end
-
-  vim.wait(100) -- Check every 100ms
 end
+
+print('All parsers ready')

@@ -29,6 +29,14 @@ jobs:
           neovim: true
           version: ${{ matrix.nvim-versions }}
 
+      - name: Cache treesitter parsers
+        uses: actions/cache@v4
+        with:
+          path: .tests/site/parser/
+          key: ${{ runner.os }}-${{ matrix.nvim-versions }}-parsers-${{ hashFiles('tests/bootstrap.lua', 'tests/setup.lua') }}
+          restore-keys: |
+            ${{ runner.os }}-${{ matrix.nvim-versions }}-parsers-
+
       - name: Test
         run: make test
 
