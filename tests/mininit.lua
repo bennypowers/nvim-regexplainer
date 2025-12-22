@@ -46,23 +46,28 @@ function M.setup()
   -- Configure parser install directory for nvim-treesitter
   -- Try modern API first (nvim-treesitter.setup with install_dir)
   local ok, ts = pcall(require, 'nvim-treesitter')
-  if ok and ts.setup then
-    ok = pcall(ts.setup, {
-      install_dir = parser_install_dir,
-    })
-  end
 
   if not ok then
     print 'Could not set up tree sitter'
-    process:exit(1)
+    os.exit(1)
   end
 
-  ts.install({
+  ts.setup { install_dir = parser_install_dir }
+
+  local parsers = {
     'html',
     'javascript',
     'typescript',
     'regex',
-  }):wait(300000)
+  }
+
+  for _, lang in ipairs(parsers) do
+    if not pcall(function()
+      ts.install(lang):wait(300000)
+    end) then
+      print('Failed to install language parser: ' .. lang)
+    end
+  end
 end
 
 M.setup()
