@@ -23,28 +23,22 @@ for _, lang in ipairs(parsers) do
   if vim.fn.filereadable(parser_file) ~= 1 then
     print('Installing ' .. lang .. '...')
 
-    -- Start async installation
+    -- Start async installation and wait for completion
     local task = install.install({ lang }, { summary = false })
 
-    -- Actually wait for the task to complete using pwait
-    -- This processes the async event loop instead of just polling
     if task and task.pwait then
-      local ok, err = task:pwait(120000)  -- 2 minutes per parser
+      local ok, err = task:pwait(30000)  -- Max 30 seconds per parser (way more than needed)
       if not ok then
         error(string.format('Failed to install %s parser: %s', lang, err or 'unknown error'))
       end
     end
 
-    -- pwait() can return before the file is fully written
-    -- Poll for a short time to ensure the .so file exists
-    local start = vim.loop.now()
-    local file_wait_timeout = 5000  -- 5 seconds should be plenty
-    while vim.fn.filereadable(parser_file) ~= 1 do
-      if vim.loop.now() - start > file_wait_timeout then
-        error(string.format('%s parser installation completed but .so file not found at %s after %ds',
-          lang, parser_file, file_wait_timeout / 1000))
-      end
-      vim.wait(50)
+    -- Give the event loop one tick to flush any pending file writes
+    vim.wait(100)
+
+    -- Verify the file exists
+    if vim.fn.filereadable(parser_file) ~= 1 then
+      error(string.format('%s parser .so file not found at %s', lang, parser_file))
     end
 
     print(lang .. ' parser installed')
