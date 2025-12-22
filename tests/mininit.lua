@@ -28,8 +28,14 @@ function M.setup()
   vim.opt.swapfile = false
   vim.opt.filetype = 'on'
   vim.opt.packpath = { parser_install_dir }
+
+  -- Add all pack/*/start/* directories to runtimepath for plugin files
+  local pack_start = parser_install_dir .. '/pack/deps/start'
   vim.opt.runtimepath = {
     parser_install_dir,
+    pack_start .. '/nvim-treesitter',
+    pack_start .. '/plenary.nvim',
+    pack_start .. '/nui.nvim',
     '$VIMRUNTIME',
     M.root(),
     M.root 'tests',
@@ -43,8 +49,10 @@ function M.setup()
 
   vim.cmd.packloadall()
 
+  -- Ensure nvim-treesitter plugin files are loaded (for language registration)
+  vim.cmd.runtime 'plugin/nvim-treesitter.lua'
+
   -- Configure parser install directory for nvim-treesitter
-  -- Try modern API first (nvim-treesitter.setup with install_dir)
   local ok, ts = pcall(require, 'nvim-treesitter')
 
   if not ok then
