@@ -23,6 +23,9 @@ jobs:
       - name: checkout
         uses: actions/checkout@v2
 
+      - name: Install tree-sitter CLI
+        run: npm install -g tree-sitter-cli
+
       - name: Install Neovim
         uses: rhysd/action-setup-vim@v1
         with:
