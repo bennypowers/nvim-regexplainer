@@ -76,7 +76,7 @@ local function create_pattern_popup(pattern_text, image_buffer, options, image_h
   vim.api.nvim_buf_set_lines(pattern_bufnr, 0, -1, false, { formatted_pattern })
 
   -- Set filetype to javascript for syntax highlighting
-  vim.api.nvim_buf_set_option(pattern_bufnr, 'filetype', 'javascript')
+  vim.bo[pattern_bufnr].filetype = 'javascript'
 
   -- Get the NUI popup's actual screen position using window config
   local pattern_width = #formatted_pattern

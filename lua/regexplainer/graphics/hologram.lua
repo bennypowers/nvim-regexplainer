@@ -51,7 +51,7 @@ local function display_image(base64_data, options)
   file:close()
 
   -- Verify the file was created and has content
-  local file_info = vim.loop.fs_stat(temp_file)
+  local file_info = vim.uv.fs_stat(temp_file)
   if not file_info then
     return false
   end

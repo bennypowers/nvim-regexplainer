@@ -53,7 +53,7 @@ describe('graphical renderer', function()
       -- Create a buffer with a simple regex
       local bufnr = vim.api.nvim_create_buf(false, true)
       vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'const regex = /test/' })
-      vim.api.nvim_buf_set_option(bufnr, 'filetype', 'javascript')
+      vim.bo[bufnr].filetype = 'javascript'
       vim.api.nvim_set_current_buf(bufnr)
 
       -- Position cursor on the regex
