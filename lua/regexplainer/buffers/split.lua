@@ -78,11 +78,11 @@ local function after(self, lines, options, state)
         local original_win = vim.api.nvim_get_current_win()
         
         -- Temporarily make buffer modifiable to set content
-        vim.api.nvim_buf_set_option(self.bufnr, 'modifiable', true)
-        vim.api.nvim_buf_set_option(self.bufnr, 'readonly', false)
+        vim.bo[self.bufnr].modifiable = true
+        vim.bo[self.bufnr].readonly = false
         vim.api.nvim_buf_set_lines(self.bufnr, 0, -1, false, {''})
-        vim.api.nvim_buf_set_option(self.bufnr, 'readonly', true)
-        vim.api.nvim_buf_set_option(self.bufnr, 'modifiable', false)
+        vim.bo[self.bufnr].readonly = true
+        vim.bo[self.bufnr].modifiable = false
         
         -- Only switch to split window if it's still valid
         if vim.api.nvim_win_is_valid(split_win) then

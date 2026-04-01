@@ -56,7 +56,7 @@ local function generate_railroad_diagram(components, options, pattern_text)
   local script_path = get_script_path()
 
   -- Convert components to JSON
-  local components_json = vim.fn.json_encode(components)
+  local components_json = vim.json.encode(components)
 
   -- Escape the JSON for shell command
   local escaped_json = vim.fn.shellescape(components_json)
@@ -95,7 +95,7 @@ local function generate_railroad_diagram(components, options, pattern_text)
   end
 
   -- Parse JSON response to get base64 data and actual dimensions
-  local ok, parsed = pcall(vim.fn.json_decode, result)
+  local ok, parsed = pcall(vim.json.decode, result)
   if not ok or not parsed or not parsed.base64 then
     if options.debug then
       utils.notify('Failed to parse Python script JSON response', 'error')

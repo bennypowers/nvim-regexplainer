@@ -1,12 +1,6 @@
 local M = {}
 
-local health = {
-  start = vim.health.start or vim.health.report_start,
-  ok = vim.health.ok or vim.health.report_ok,
-  warn = vim.health.warn or vim.health.report_warn,
-  error = vim.health.error or vim.health.report_error,
-  info = vim.health.info or vim.health.report_info,
-}
+local health = vim.health
 
 --- Check regexplainer health
 function M.check()
@@ -105,7 +99,7 @@ function M.check()
     -- Create a minimal test environment
     local bufnr = vim.api.nvim_create_buf(false, true)
     vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { 'test /hello/ world' })
-    vim.api.nvim_buf_set_option(bufnr, 'filetype', 'javascript')
+    vim.bo[bufnr].filetype = 'javascript'
     
     -- Test component creation
     local tree = require 'regexplainer.utils.treesitter'
