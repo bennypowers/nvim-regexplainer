@@ -63,6 +63,34 @@ M.check = function()
     end
   end
 
+  -- Query-based languages (regex in string arguments, no injection needed)
+  local query_langs = {
+    { 'python', 'python' },
+    { 'go', 'go' },
+    { 'rust', 'rust' },
+    { 'php', 'php' },
+    { 'java', 'java' },
+    { 'c_sharp', 'cs' },
+  }
+
+  for _, entry in ipairs(query_langs) do
+    local parser_lang, filetype = entry[1], entry[2]
+
+    local lang_ok = pcall(vim.treesitter.language.add, parser_lang)
+    if not lang_ok then
+      vim.health.info(filetype .. ': parser not installed (skipped)')
+    else
+      local query = vim.treesitter.query.get(parser_lang, 'regexplainer')
+      if query then
+        vim.health.ok(filetype .. ': regexplainer query loaded')
+      else
+        vim.health.error(filetype .. ': regexplainer query not found', {
+          'Ensure nvim-regexplainer is up to date',
+        })
+      end
+    end
+  end
+
   vim.health.start('regexplainer: graphical mode')
 
   local graphics = require 'regexplainer.graphics'
