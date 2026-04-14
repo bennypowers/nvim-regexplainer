@@ -22,6 +22,8 @@ local split_defaults = {
 }
 
 --- Native split window replacing nui.split
+---@class RegexplainerSplit: RegexplainerBuffer
+---@field _opts RegexplainerSplitOptions
 local SplitWin = {}
 SplitWin.__index = SplitWin
 

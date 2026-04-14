@@ -3,12 +3,12 @@ local Buffers = require'regexplainer.buffers'
 
 local M = {}
 
----A Nui-compatible scratch buffer.
----ephemeral, invisible, unlisted
+---An ephemeral, invisible, unlisted scratch buffer.
 ---
 ---@class ScratchBuffer
----@field _      RegexplainerBufferOptions
----@field bufnr number
+---@field _      { mounted: boolean }
+---@field bufnr  number
+---@field type   "Scratch"
 local Scratch = setmetatable({
   super = nil
 }, {

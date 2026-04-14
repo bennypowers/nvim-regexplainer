@@ -21,8 +21,8 @@ local au = vim.api.nvim_create_autocmd
 ---@field narrative?        RegexplainerNarrativeRendererOptions # Options for the narrative renderer
 ---@field graphical?        RegexplainerGraphicalRendererOptions # Options for the graphical renderer
 ---@field deps?             RegexplainerDepsConfig               # Options for dependency management
----@field popup?            table                                # options for the popup buffer
----@field split?            table                                # options for the split buffer
+---@field popup?            RegexplainerPopupOptions             # options for the popup buffer
+---@field split?            RegexplainerSplitOptions             # options for the split buffer
 
 ---@class RegexplainerRenderOptions: RegexplainerOptions
 ---@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"

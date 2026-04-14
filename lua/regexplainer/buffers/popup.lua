@@ -28,6 +28,14 @@ local popup_defaults = {
 }
 
 --- Native popup window replacing nui.popup
+---@class RegexplainerPopup: RegexplainerBuffer
+---@field _opts    RegexplainerPopupOptions
+---@field _width   number
+---@field _height  number
+---@field _pad_top    number
+---@field _pad_right  number
+---@field _pad_bottom number
+---@field _pad_left   number
 local Popup = {}
 Popup.__index = Popup
 

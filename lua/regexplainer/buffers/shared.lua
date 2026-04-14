@@ -1,26 +1,47 @@
 local M = {}
 
----@class RegexplainerBuffer: ScratchBuffer
----@field type       "Popup"|"Split"|"Scratch"
----@field init       fun(buf:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state: RegexplainerRendererState):nil
----@field after      fun(buf:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state: RegexplainerRendererState):nil
----@field winid      number
----@field hide       fun():nil
+---@class RegexplainerWindowOptions
+---@field wrap?         boolean
+---@field conceallevel? 0|1|2|3
 
----@class WindowOptions
----@field wrap         boolean
----@field conceallevel 0|1|2|3
+---@class RegexplainerBufOptions
+---@field filetype?     string
+---@field readonly?     boolean
+---@field modifiable?   boolean
+---@field buflisted?    boolean
 
----@class BufferOptions
----@field filetype     string
----@field readonly     boolean
----@field modifiable   boolean
+---@class RegexplainerBorderOptions
+---@field style?   string  # border style for nvim_open_win ('shadow', 'rounded', etc.)
+---@field padding? number[] # vertical, horizontal padding
 
 ---@class RegexplainerBufferOptions
----@field enter       boolean
----@field focusable   boolean
----@field buf_options BufferOptions
----@field win_options WindowOptions
+---@field enter?       boolean
+---@field focusable?   boolean
+---@field buf_options? RegexplainerBufOptions
+---@field win_options? RegexplainerWindowOptions
+
+---@class RegexplainerPopupOptions: RegexplainerBufferOptions
+---@field relative? string  # 'cursor'|'editor'|'win'
+---@field position? number  # row offset from anchor
+---@field size?     number
+---@field border?   RegexplainerBorderOptions
+
+---@class RegexplainerSplitOptions: RegexplainerBufferOptions
+---@field relative? string  # 'editor'|'window'
+---@field position? string  # 'bottom'|'top'
+---@field size?     string|number # '20%' or absolute lines
+
+---@class RegexplainerBuffer
+---@field type       "Popup"|"Split"|"Scratch"
+---@field bufnr      number
+---@field winid      number|nil
+---@field _          { mounted: boolean }
+---@field init       fun(self:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state:RegexplainerRendererState)
+---@field after      fun(self:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state:RegexplainerRendererState)
+---@field mount      fun(self:RegexplainerBuffer)
+---@field unmount    fun(self:RegexplainerBuffer)
+---@field hide       fun(self:RegexplainerBuffer)
+---@field set_size?  fun(self:RegexplainerBuffer,config:{width:number|string,height:number})
 M.shared_options = {
   enter = false,
   focusable = false,
