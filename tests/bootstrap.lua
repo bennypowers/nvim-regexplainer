@@ -17,4 +17,5 @@ ts.install({
   'rust',
   'php',
   'java',
+  'c_sharp',
 }):wait(30000)

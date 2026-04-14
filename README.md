@@ -28,7 +28,7 @@ nvim-regexplainer requires the `regex` treesitter parser, as well as the
 parser for the host language.
 
 Supported languages: JavaScript, TypeScript, HTML, Ruby, Python, Go, Rust,
-PHP, Java.
+PHP, Java, C#.
 
 Run `:checkhealth regexplainer` to verify your treesitter setup.
 
@@ -60,6 +60,7 @@ require'regexplainer'.setup {
     'rust',
     'php',
     'java',
+    'cs',
   },
 
   -- Whether to log debug messages

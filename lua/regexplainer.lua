@@ -77,6 +77,7 @@ local default_config = {
     'rust',
     'php',
     'java',
+    'cs',
   },
   debug = false,
   display = 'popup',
