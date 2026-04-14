@@ -1,7 +1,7 @@
 local M = {}
 
----@class RegexplainerBuffer: ScratchBuffer|NuiPopup|NuiSplit
----@field type       "NuiPopup"|"NuiSplit"|"Scratch"
+---@class RegexplainerBuffer: ScratchBuffer
+---@field type       "Popup"|"Split"|"Scratch"
 ---@field init       fun(buf:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state: RegexplainerRendererState):nil
 ---@field after      fun(buf:RegexplainerBuffer,lines:string[],options:RegexplainerOptions,state: RegexplainerRendererState):nil
 ---@field winid      number
@@ -16,29 +16,11 @@ local M = {}
 ---@field readonly     boolean
 ---@field modifiable   boolean
 
----@class NuiSplitBufferOptions: NuiBufferOptions
----@field relative 'editor'|'window'
----@field position 'bottom'|'top'
----@field size     string
-
----@class NuiBorderOptions
----@field padding number[]
----@field style   'shadow'|'double'
-
----@class NuiPopupBufferOptions: NuiBufferOptions
----@field relative 'cursor'
----@field position number
----@field size     number|table<'width'|'height', number>
----@field border   NuiBorderOptions
-
----@alias RegexplainerBufferOptions NuiSplitBufferOptions|NuiPopupBufferOptions
-
----@class NuiBufferOptions
+---@class RegexplainerBufferOptions
 ---@field enter       boolean
 ---@field focusable   boolean
 ---@field buf_options BufferOptions
 ---@field win_options WindowOptions
---
 M.shared_options = {
   enter = false,
   focusable = false,

@@ -289,7 +289,7 @@ function M.after_render(buffer, lines, options, state)
   -- Display railroad diagram image if we have image data
   if state and state.image_data then
     -- Skip image display for split mode - it handles its own image display
-    if buffer and buffer.type == 'NuiSplit' then
+    if buffer and buffer.type == 'Split' then
       if options.debug then
         utils.notify('Skipping after_render image display for split mode', 'info')
       end

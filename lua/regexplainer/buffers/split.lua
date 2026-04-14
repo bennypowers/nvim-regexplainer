@@ -1,5 +1,4 @@
 local Shared = require 'regexplainer.buffers.shared'
-local Split = require 'nui.split'
 
 local set_current_win = vim.api.nvim_set_current_win
 local set_current_buf = vim.api.nvim_set_current_buf
@@ -8,13 +7,12 @@ local extend = vim.tbl_deep_extend
 
 local M = {}
 
----@type NuiSplitBufferOptions
 local split_defaults = {
   relative = 'editor',
   position = 'bottom',
   size = '20%',
-  enter = false,  -- Don't enter the split window
-  focusable = false,  -- Don't allow focus
+  enter = false,
+  focusable = false,
   buf_options = {
     filetype = 'Regexplainer',
     readonly = true,
@@ -22,6 +20,86 @@ local split_defaults = {
     buflisted = false,
   },
 }
+
+--- Native split window replacing nui.split
+local SplitWin = {}
+SplitWin.__index = SplitWin
+
+function SplitWin.new(opts)
+  local self = setmetatable({}, SplitWin)
+  self.type = 'Split'
+  self._opts = opts
+  self._ = { mounted = false }
+  self.bufnr = vim.api.nvim_create_buf(false, true)
+
+  if opts.buf_options then
+    for k, v in pairs(opts.buf_options) do
+      pcall(function() vim.bo[self.bufnr][k] = v end)
+    end
+  end
+
+  return self
+end
+
+function SplitWin:mount()
+  if self._.mounted then return end
+
+  local cur_win = vim.api.nvim_get_current_win()
+
+  vim.cmd('botright new')
+  self.winid = vim.api.nvim_get_current_win()
+  local tmp_buf = vim.api.nvim_get_current_buf()
+  vim.api.nvim_win_set_buf(self.winid, self.bufnr)
+  pcall(vim.api.nvim_buf_delete, tmp_buf, { force = true })
+
+  local size = self._opts.size or '20%'
+  if type(size) == 'string' then
+    local pct = tonumber(size:match('(%d+)%%'))
+    if pct then
+      win_set_height(self.winid, math.floor(vim.o.lines * pct / 100))
+    end
+  elseif type(size) == 'number' then
+    win_set_height(self.winid, size)
+  end
+
+  if self._opts.win_options then
+    for k, v in pairs(self._opts.win_options) do
+      pcall(function() vim.wo[self.winid][k] = v end)
+    end
+  end
+
+  if not self._opts.enter then
+    set_current_win(cur_win)
+  end
+
+  self._.mounted = true
+end
+
+function SplitWin:unmount()
+  if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+    vim.api.nvim_win_close(self.winid, true)
+  end
+  if self.bufnr and vim.api.nvim_buf_is_valid(self.bufnr) then
+    vim.api.nvim_buf_delete(self.bufnr, { force = true })
+  end
+  self.winid = nil
+  self._.mounted = false
+end
+
+function SplitWin:hide()
+  if _G._regexplainer_hologram_image and _G._regexplainer_hologram_bufnr then
+    pcall(function()
+      _G._regexplainer_hologram_image:delete(_G._regexplainer_hologram_bufnr, { free = true })
+      _G._regexplainer_hologram_image = nil
+      _G._regexplainer_hologram_bufnr = nil
+    end)
+  end
+
+  if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+    vim.api.nvim_win_close(self.winid, true)
+  end
+  self.winid = nil
+end
 
 local function after(self, lines, options, state)
   -- Set flag to prevent cursor exit detection until setup is complete
@@ -150,17 +228,16 @@ local function after(self, lines, options, state)
 end
 
 function M.get_buffer(options, state)
-  if state.last.type == 'NuiSplit' then
-    -- Check if the split still exists and is valid
+  if state.last.type == 'Split' then
     if state.last.winid and vim.api.nvim_win_is_valid(state.last.winid) then
       return state.last
     else
-      -- Reset the state so we create a new split
       state.last = { type = nil }
     end
   end
-  local buffer = Split(extend('force', Shared.shared_options, split_defaults, options.split or {}))
-  buffer.type = 'NuiSplit'
+
+  local buffer = SplitWin.new(extend('force', Shared.shared_options, split_defaults, options.split or {}))
+  buffer.type = 'Split'
   state.last = buffer
   buffer.init = function(self, lines, options, state)
     Shared.default_buffer_init(self, lines, options, state)
@@ -170,24 +247,7 @@ function M.get_buffer(options, state)
     end
   end
   buffer.after = after
-  
-  -- Override hide method to cleanup hologram
-  local original_hide = buffer.hide
-  buffer.hide = function(self)
-    -- Clean up any hologram images when hiding
-    if _G._regexplainer_hologram_image and _G._regexplainer_hologram_bufnr then
-      pcall(function()
-        _G._regexplainer_hologram_image:delete(_G._regexplainer_hologram_bufnr, { free = true })
-        _G._regexplainer_hologram_image = nil
-        _G._regexplainer_hologram_bufnr = nil
-      end)
-    end
-    
-    if original_hide then
-      original_hide(self)
-    end
-  end
-  
+
   return buffer
 end
 

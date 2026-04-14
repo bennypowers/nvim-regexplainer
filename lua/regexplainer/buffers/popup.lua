@@ -17,7 +17,6 @@ local function cleanup_hologram_image()
   end
 end
 
----@type NuiPopupBufferOptions
 local popup_defaults = {
   position = 2,
   relative = 'cursor',
@@ -27,6 +26,119 @@ local popup_defaults = {
     padding = { 1, 2 },
   },
 }
+
+--- Native popup window replacing nui.popup
+local Popup = {}
+Popup.__index = Popup
+
+function Popup.new(opts)
+  local self = setmetatable({}, Popup)
+  self.type = 'Popup'
+  self._opts = opts
+  self._width = 1
+  self._height = 1
+
+  local padding = opts.border and opts.border.padding or {}
+  self._pad_top = padding[1] or 0
+  self._pad_right = padding[2] or 0
+  self._pad_bottom = padding[3] or padding[1] or 0
+  self._pad_left = padding[4] or padding[2] or 0
+
+  self._ = { mounted = false }
+  self.bufnr = vim.api.nvim_create_buf(false, true)
+
+  if opts.buf_options then
+    for k, v in pairs(opts.buf_options) do
+      pcall(function() vim.bo[self.bufnr][k] = v end)
+    end
+  end
+
+  return self
+end
+
+function Popup:mount()
+  if self._.mounted then return end
+
+  self.winid = vim.api.nvim_open_win(self.bufnr, self._opts.enter or false, {
+    relative = self._opts.relative or 'cursor',
+    row = self._opts.position or 1,
+    col = 0,
+    width = math.max(1, self._width),
+    height = math.max(1, self._height),
+    style = 'minimal',
+    border = self._opts.border and self._opts.border.style or 'none',
+    focusable = self._opts.focusable or false,
+    zindex = 50,
+  })
+
+  if self._opts.win_options then
+    for k, v in pairs(self._opts.win_options) do
+      pcall(function() vim.wo[self.winid][k] = v end)
+    end
+  end
+
+  if self._pad_left > 0 then
+    vim.wo[self.winid].foldcolumn = tostring(self._pad_left)
+    local whl = vim.wo[self.winid].winhighlight
+    local fc = 'FoldColumn:NormalFloat'
+    vim.wo[self.winid].winhighlight = (whl ~= '' and whl .. ',' or '') .. fc
+  end
+
+  self._.mounted = true
+end
+
+function Popup:unmount()
+  if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+    vim.api.nvim_win_close(self.winid, true)
+  end
+  if self.bufnr and vim.api.nvim_buf_is_valid(self.bufnr) then
+    vim.api.nvim_buf_delete(self.bufnr, { force = true })
+  end
+  self.winid = nil
+  self._.mounted = false
+end
+
+function Popup:hide()
+  if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+    vim.api.nvim_win_close(self.winid, true)
+  end
+  self.winid = nil
+end
+
+function Popup:set_size(config)
+  local width = config.width
+  local height = config.height
+
+  if type(width) == 'string' then
+    local pct = tonumber(width:match('(%d+)%%'))
+    if pct then
+      width = math.floor(get_win_width(0) * pct / 100)
+    else
+      width = 40
+    end
+  end
+
+  width = math.max(1, (width or 1) + self._pad_left + self._pad_right)
+  height = math.max(1, (height or 1) + self._pad_top + self._pad_bottom)
+  self._width = width
+  self._height = height
+
+  if self.winid and vim.api.nvim_win_is_valid(self.winid) then
+    vim.api.nvim_win_set_config(self.winid, {
+      relative = self._opts.relative or 'cursor',
+      row = self._opts.position or 1,
+      col = 0,
+      width = width,
+      height = height,
+    })
+  end
+end
+
+function Popup:apply_padding()
+  -- Top/bottom padding is handled by the window being taller than the content.
+  -- Left padding is handled via foldcolumn (set in mount).
+  -- No buffer content modification needed.
+end
 
 local function init(self, lines, _, state)
   Shared.default_buffer_init(self)
@@ -280,6 +392,8 @@ local function create_pattern_popup(pattern_text, image_buffer, options, image_h
 end
 
 local function after(self, _, options, state)
+  self:apply_padding()
+
   if options.auto then
     -- For graphical mode with image data, use smart cursor tracking
     if state.image_data and state.full_regexp_range then
@@ -431,9 +545,8 @@ local function after(self, _, options, state)
 end
 
 function M.get_buffer(options, state)
-  local Popup = require 'nui.popup'
-  local buffer = Popup(extend('force', Shared.shared_options, popup_defaults, options.popup or {}) or popup_defaults)
-  buffer.type = 'NuiPopup'
+  local buffer = Popup.new(extend('force', Shared.shared_options, popup_defaults, options.popup or {}))
+  buffer.type = 'Popup'
   state.last = buffer
   buffer.init = init
   buffer.after = after

@@ -6,7 +6,7 @@ local get_current_buf = vim.api.nvim_get_current_buf
 local all_buffers = {}
 
 ---@param object RegexplainerBuffer
----@returns 'NuiSplit'|'NuiPopup'|'Scratch'
+---@returns 'Split'|'Popup'|'Scratch'
 local function get_class_name(object)
   if object.type then
     return object.type
@@ -15,7 +15,7 @@ local function get_class_name(object)
   end
 end
 
----@param expected 'NuiSplit'|'NuiPopup'|'Scratch'
+---@param expected 'Split'|'Popup'|'Scratch'
 ---@return fun(buffer:RegexplainerBuffer):boolean
 local function is_buftype(expected)
   return function(buffer)
@@ -173,11 +173,11 @@ end
 
 ---Is it a popup buffer?
 ---@type fun(buffer:RegexplainerBuffer):boolean
-M.is_popup = is_buftype 'NuiPopup'
+M.is_popup = is_buftype 'Popup'
 
 ---Is it a split buffer?
 ---@type fun(buffer:RegexplainerBuffer):boolean
-M.is_split = is_buftype 'NuiSplit'
+M.is_split = is_buftype 'Split'
 
 ---Is it a scratch buffer?
 ---@type fun(buffer:RegexplainerBuffer):boolean

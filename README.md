@@ -24,8 +24,6 @@ vim.pack.add 'https://github.com/bennypowers/nvim-regexplainer'
 
 ### Dependencies
 
-- [nui.nvim](https://github.com/MunifTanjim/nui.nvim) for popup and split window display
-
 nvim-regexplainer requires the `regex` treesitter parser, as well as the
 parser for the host language (javascript, typescript, html).
 
@@ -112,8 +110,7 @@ require'regexplainer'.show { display = 'split' }
 Or use the commands `RegexplainerShowSplit` or `RegexplainerShowPopup`. 
 `RegexplainerHide` and `RegexplainerToggle` are also available.
 
-You can customize the popup window by specifying `options.popup.border`,
-which is a table of [popup options from nui][popup-options].
+You can customize the popup window by specifying `options.popup.border`.
 Any options specified for `options.popup` will also override the defaults.
 
 ```lua
@@ -287,7 +284,6 @@ pip install railroad-diagrams Pillow cairosvg
 [made-with-lua]: https://img.shields.io/badge/Made%20with%20Lua-blueviolet.svg?style=for-the-badge&logo=lua
 [build-status]: https://img.shields.io/github/actions/workflow/status/bennypowers/nvim-regexplainer/main.yml?branch=main&label=tests&style=for-the-badge
 [atom-regexp-railroad]: https://github.com/klorenz/atom-regex-railroad-diagrams/
-[popup-options]: https://github.com/MunifTanjim/nui.nvim/tree/main/lua/nui/popup#border
 [railroad-diagrams]: https://github.com/tabatkins/railroad-diagrams/
 [hologram]: https://github.com/edluffy/hologram.nvim
 [kitty]: https://sw.kovidgoyal.net/kitty/graphics-protocol/

@@ -34,18 +34,6 @@ local injection_samples = {
 }
 
 M.check = function()
-  vim.health.start('regexplainer: dependencies')
-
-  local nui_ok = pcall(require, 'nui')
-  if nui_ok then
-    vim.health.ok('nui.nvim is available')
-  else
-    vim.health.error('nui.nvim is not available', {
-      'nvim-regexplainer requires nui.nvim',
-      'Install it with your plugin manager',
-    })
-  end
-
   vim.health.start('regexplainer: treesitter')
 
   local parser_ok = pcall(vim.treesitter.language.add, 'regex')
