@@ -66,8 +66,11 @@ M.check = function()
     if not ensure_parser(filetype) then
       vim.health.warn(filetype .. ': parser not available (skipped)')
     else
-      if test_regex_injection(filetype, source, row, col) then
+      local inject_ok, result = pcall(test_regex_injection, filetype, source, row, col)
+      if inject_ok and result then
         vim.health.ok(filetype .. ': regex injection working')
+      elseif not inject_ok then
+        vim.health.warn(filetype .. ': injection test failed (' .. tostring(result) .. ')')
       else
         vim.health.error(filetype .. ': regex injection not detected', {
           'Ensure the ' .. filetype .. ' treesitter parser is up to date',
@@ -92,9 +95,11 @@ M.check = function()
     if not ensure_parser(parser_lang) then
       vim.health.info(filetype .. ': parser not available (skipped)')
     else
-      local query = vim.treesitter.query.get(parser_lang, 'regexplainer')
-      if query then
+      local query_ok, query = pcall(vim.treesitter.query.get, parser_lang, 'regexplainer')
+      if query_ok and query then
         vim.health.ok(filetype .. ': regexplainer query loaded')
+      elseif not query_ok then
+        vim.health.warn(filetype .. ': could not load query (' .. tostring(query) .. ')')
       else
         vim.health.error(filetype .. ': regexplainer query not found', {
           'Ensure nvim-regexplainer is up to date',
