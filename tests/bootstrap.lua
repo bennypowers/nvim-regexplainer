@@ -14,4 +14,5 @@ ts.install({
   'ruby',
   'python',
   'go',
+  'rust',
 }):wait(30000)

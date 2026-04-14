@@ -74,6 +74,7 @@ local default_config = {
     'ruby',
     'python',
     'go',
+    'rust',
   },
   debug = false,
   display = 'popup',
