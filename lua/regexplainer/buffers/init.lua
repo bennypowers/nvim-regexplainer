@@ -79,7 +79,7 @@ end
 
 ---@param buffer     RegexplainerBuffer
 ---@param renderer   RegexplainerRenderer
----@param options    RegexplainerRenderOptions
+---@param options    RegexplainerOptions
 ---@param components RegexplainerComponent[]
 ---@param state      RegexplainerRendererState
 --

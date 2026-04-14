@@ -25,10 +25,7 @@ local au = vim.api.nvim_create_autocmd
 ---@field split?            RegexplainerSplitOptions             # options for the split buffer
 
 ---@class RegexplainerRenderOptions: RegexplainerOptions
----@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
-
----@class RegexplainerYankOptions: RegexplainerOptions
----@field register          "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
+---@field register?         "*"|"+"|'"'|":"|"."|"%"|"/"|"#"|"0"|"1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"
 
 ---@class RegexplainerMappings
 ---@field show?       string      # shows regexplainer
@@ -102,7 +99,6 @@ local default_config = {
 --
 local local_config = deep_extend('keep', default_config, {})
 
-local last_node = nil
 local last_range = nil
 
 --- Show the explainer for the regexp under the cursor
@@ -132,7 +128,6 @@ local function show_for_real(options)
   local node, scratchnr, error
   if original_node then
     node, scratchnr, error = tree.get_pattern(original_node)
-    last_node = original_node
     local start_row, start_col, end_row, end_col = original_node:range()
     last_range = { start_row, start_col, end_row, end_col }
   else
@@ -160,7 +155,7 @@ local function show_for_real(options)
       renderer = require 'regexplainer.renderers.debug'
     end
 
-    local start_row, start_col, end_row, end_col = original_node:range()
+    local start_row, start_col, end_row, end_col = original_node:range() ---@diagnostic disable-line: need-check-nil
     local state = {
       full_regexp_text = get_node_text(node, scratchnr),
       full_regexp_range = {
@@ -189,13 +184,14 @@ function M.show(options)
 end
 
 --- Yank the explainer for the regexp under the cursor into a given register
----@param options? string|RegexplainerYankOptions
+---@param options? string|RegexplainerRenderOptions
 function M.yank(options)
   disable_auto = true
-  if type(options) == 'string' then
-    options = { register = options }
-  end
-  show_for_real(deep_extend('force', options, { display = 'register' }))
+  ---@type RegexplainerRenderOptions
+  local opts = type(options) == 'string'
+    and { register = options }
+     or options --[[@as RegexplainerRenderOptions]] or {}
+  show_for_real(deep_extend('force', opts, { display = 'register' }))
   disable_auto = false
 end
 
@@ -204,11 +200,11 @@ end
 ---@return nil
 --
 function M.setup(config)
-  local_config = deep_extend('keep', config or {}, default_config)
+  local_config = deep_extend('keep', config or {}, default_config) --[[@as RegexplainerOptions]]
 
   -- bind keys from config
   for cmdmap, binding in pairs(local_config.mappings) do
-    local cmd, description = unpack(config_command_map[cmdmap])
+    local cmd, description = (unpack or table.unpack)(config_command_map[cmdmap])
     local command = ':' .. cmd .. '<CR>'
     utils.map('n', binding, command, { desc = description })
   end
@@ -237,7 +233,6 @@ end
 --- Hide any displayed regexplainer buffers
 --
 function M.hide()
-  last_node = nil
   last_range = nil
   Buffers.hide_all()
 end
