@@ -32,6 +32,7 @@ local function category_filter(category)
    or category == 'Practical Examples'
    or category == 'Regex Sudoku'
    or category == 'Errors'
+   or category == 'Backreferences'
  )
 end
 

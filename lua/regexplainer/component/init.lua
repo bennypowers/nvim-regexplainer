@@ -160,7 +160,7 @@ function M.make_components(bufnr, node, parent, root_regex_node)
 
       previous.text = previous.text .. child_text
       previous.type = 'pattern_character'
-    elseif (type == 'identity_escape' or type == 'decimal_escape')
+    elseif type == 'identity_escape'
         and Predicates.is_simple_pattern_character(previous) then
       if node_type ~= 'character_class'
           and not node_pred.is_modifier(child:next_sibling()) then
@@ -169,6 +169,25 @@ function M.make_components(bufnr, node, parent, root_regex_node)
         table.insert(components, c {
           type = type,
           text = child_text
+        })
+      end
+
+    elseif type == 'decimal_escape' then
+      local num = tonumber(child_text:sub(2))
+      if num and num > 0 and num <= capture_tally then
+        table.insert(components, c {
+          type = type,
+          text = child_text,
+          backreference = num,
+        })
+      elseif Predicates.is_simple_pattern_character(previous)
+          and node_type ~= 'character_class'
+          and not node_pred.is_modifier(child:next_sibling()) then
+        previous.text = previous.text .. child_text:gsub([[^\+]], '')
+      else
+        table.insert(components, c {
+          type = type,
+          text = child_text,
         })
       end
 

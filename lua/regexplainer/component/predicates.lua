@@ -95,6 +95,11 @@ function M.is_simple_pattern_character(component)
     return false
   end
 
+  if M.is_character_class_escape(component)
+      or M.is_control_escape(component) then
+    return false
+  end
+
   if M.is_identity_escape(component)
       or M.is_decimal_escape(component)
       or component.type ~= 'pattern_character' then
