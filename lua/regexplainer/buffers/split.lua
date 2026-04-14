@@ -52,7 +52,8 @@ function SplitWin:mount()
 
   local cur_win = vim.api.nvim_get_current_win()
 
-  vim.cmd('botright new')
+  local pos = self._opts.position or 'bottom'
+  vim.cmd(pos == 'top' and 'topleft new' or 'botright new')
   self.winid = vim.api.nvim_get_current_win()
   local tmp_buf = vim.api.nvim_get_current_buf()
   vim.api.nvim_win_set_buf(self.winid, self.bufnr)
@@ -81,7 +82,18 @@ function SplitWin:mount()
   self._.mounted = true
 end
 
+local function cleanup_hologram()
+  if _G._regexplainer_hologram_image and _G._regexplainer_hologram_bufnr then
+    pcall(function()
+      _G._regexplainer_hologram_image:delete(_G._regexplainer_hologram_bufnr, { free = true })
+      _G._regexplainer_hologram_image = nil
+      _G._regexplainer_hologram_bufnr = nil
+    end)
+  end
+end
+
 function SplitWin:unmount()
+  cleanup_hologram()
   if self.winid and vim.api.nvim_win_is_valid(self.winid) then
     vim.api.nvim_win_close(self.winid, true)
   end
@@ -93,14 +105,7 @@ function SplitWin:unmount()
 end
 
 function SplitWin:hide()
-  if _G._regexplainer_hologram_image and _G._regexplainer_hologram_bufnr then
-    pcall(function()
-      _G._regexplainer_hologram_image:delete(_G._regexplainer_hologram_bufnr, { free = true })
-      _G._regexplainer_hologram_image = nil
-      _G._regexplainer_hologram_bufnr = nil
-    end)
-  end
-
+  cleanup_hologram()
   if self.winid and vim.api.nvim_win_is_valid(self.winid) then
     vim.api.nvim_win_close(self.winid, true)
   end
