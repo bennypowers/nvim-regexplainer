@@ -12,4 +12,5 @@ ts.install({
   'typescript',
   'regex',
   'ruby',
+  'python',
 }):wait(30000)

@@ -72,6 +72,7 @@ local default_config = {
     'cjsx',
     'mjsx',
     'ruby',
+    'python',
   },
   debug = false,
   display = 'popup',
