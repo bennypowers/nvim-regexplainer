@@ -13,4 +13,5 @@ ts.install({
   'regex',
   'ruby',
   'python',
+  'go',
 }):wait(30000)

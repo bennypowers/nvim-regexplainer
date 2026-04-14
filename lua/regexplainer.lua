@@ -73,6 +73,7 @@ local default_config = {
     'mjsx',
     'ruby',
     'python',
+    'go',
   },
   debug = false,
   display = 'popup',
