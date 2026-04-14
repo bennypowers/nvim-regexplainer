@@ -164,8 +164,11 @@ end
 ---@return TSNode|nil, string|nil error, string|nil processing
 --
 function M.get_regex_node_at_cursor()
-  local parser = get_parser(0)
-        parser:parse()
+  local ok, parser = pcall(get_parser, 0)
+  if not ok or not parser then
+    return nil, 'no parser for buffer'
+  end
+  parser:parse()
   local query = get_query(parser:lang(), 'regexplainer')
 
   if query then
