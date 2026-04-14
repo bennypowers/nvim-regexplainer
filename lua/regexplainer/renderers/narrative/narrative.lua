@@ -179,6 +179,9 @@ local function get_infix(component, options, state)
       if escaped_text == ' ' then escaped_text = '(space)' end
       return '`' .. escaped_text .. '`'
     elseif P.is_decimal_escape(component) then
+      if component.backreference then
+        return '(capture group ' .. component.backreference .. ')'
+      end
       return '`' .. D.describe_escape(component.text) .. '`'
     else
       return '**' .. D.describe_escape(component.text) .. '**'

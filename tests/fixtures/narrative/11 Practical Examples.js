@@ -32,3 +32,17 @@
  * `\>`
  */
 /<link rel="stylesheet" href="(a|b)\.css"\/?>/;
+
+/**
+ * `elements@`
+ * **0-9**
+ * `.`
+ * **0-9**
+ * `.`
+ * **0-9**
+ * `/elements/`
+ * **ANY** (_>= 0x_)
+ * `lightdom.css`
+ * **END**
+ */
+/elements@\d\.\d\.\d\/elements\/.*lightdom\.css$/;
