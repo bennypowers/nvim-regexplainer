@@ -34,6 +34,8 @@ local injection_samples = {
   { 'ruby', 'x = /hello/', 0, 5 },
 }
 
+local has_ts, _ = pcall(require, 'nvim-treesitter')
+
 --- Check whether a treesitter parser is usable.
 ---@param lang string
 ---@return boolean
@@ -47,22 +49,30 @@ local function has_parser(lang)
   return parse_ok
 end
 
+---@param lang string
+---@return string[]
+local function install_advice(lang)
+  if has_ts then
+    return { 'Install with :TSInstall ' .. lang }
+  end
+  return {
+    'Place a ' .. lang .. ' parser in a `parser/` runtime directory',
+    'Or install nvim-treesitter for automatic parser management',
+  }
+end
+
 M.check = function()
   vim.health.start('regexplainer: treesitter')
 
   if not has_parser('regex') then
-    vim.health.error('regex parser is required', {
-      'Install the regex parser for treesitter',
-    })
+    vim.health.error('regex parser is required', install_advice('regex'))
   end
 
   for _, sample in ipairs(injection_samples) do
     local filetype, source, row, col = sample[1], sample[2], sample[3], sample[4]
 
     if not has_parser(filetype) then
-      vim.health.warn(filetype .. ': parser not installed', {
-        'Install with :TSInstall ' .. filetype,
-      })
+      vim.health.warn(filetype .. ': parser not installed', install_advice(filetype))
     else
       local inject_ok, result = pcall(test_regex_injection, filetype, source, row, col)
       if inject_ok and result then
@@ -91,9 +101,7 @@ M.check = function()
     local parser_lang, filetype = entry[1], entry[2]
 
     if not has_parser(parser_lang) then
-      vim.health.warn(filetype .. ': parser not installed', {
-        'Install with :TSInstall ' .. parser_lang,
-      })
+      vim.health.warn(filetype .. ': parser not installed', install_advice(parser_lang))
     else
       local query_ok, query = pcall(vim.treesitter.query.get, parser_lang, 'regexplainer')
       if query_ok and query then
