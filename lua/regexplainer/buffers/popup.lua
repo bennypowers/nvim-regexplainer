@@ -103,6 +103,7 @@ function Popup:hide()
     vim.api.nvim_win_close(self.winid, true)
   end
   self.winid = nil
+  self._.mounted = false
 end
 
 function Popup:set_size(config)

@@ -103,6 +103,7 @@ function SplitWin:hide()
     vim.api.nvim_win_close(self.winid, true)
   end
   self.winid = nil
+  self._.mounted = false
 end
 
 local function after(self, lines, options, state)
