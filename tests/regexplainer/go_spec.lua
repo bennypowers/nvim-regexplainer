@@ -1,6 +1,6 @@
 local regexplainer = require 'regexplainer'
-local buffers = require 'regexplainer.buffers'
 local tree = require 'regexplainer.utils.treesitter'
+local LangUtils = require 'tests.helpers.lang_util'
 
 ---@param code string
 ---@param cursor_row number 1-indexed
@@ -17,19 +17,12 @@ local function setup_go_buffer(code, cursor_row, cursor_col)
   return bufnr
 end
 
-local function teardown_buffers()
-  regexplainer.teardown()
-  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-    pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
-  end
-end
-
-describe('go support', function()
+describe('go', function()
   before_each(function()
     regexplainer.teardown()
     regexplainer.setup()
   end)
-  after_each(teardown_buffers)
+  after_each(LangUtils.teardown_buffers)
 
   it('detects regex in regexp.MustCompile with raw string', function()
     setup_go_buffer('package main\nimport "regexp"\nvar x = regexp.MustCompile(`\\d+`)', 3, 30)
@@ -41,38 +34,14 @@ describe('go support', function()
     assert.is_false(tree.has_regexp_at_cursor())
   end)
 
-  it('explains a simple pattern from raw string', function()
-    setup_go_buffer('package main\nimport "regexp"\nvar x = regexp.MustCompile(`hello`)', 3, 30)
-    regexplainer.show()
-    local buffer = buffers.get_last_buffer()
-    assert.is_not_nil(buffer)
-    local lines = vim.api.nvim_buf_get_lines(buffer.bufnr, 0, -1, false)
-    local text = table.concat(lines, '\n')
-    assert.are.same('`hello`', text)
-  end)
-
-  it('explains character class escapes from raw string', function()
-    setup_go_buffer('package main\nimport "regexp"\nvar x = regexp.MustCompile(`\\d+`)', 3, 30)
-    regexplainer.show()
-    local buffer = buffers.get_last_buffer()
-    assert.is_not_nil(buffer)
-    local lines = vim.api.nvim_buf_get_lines(buffer.bufnr, 0, -1, false)
-    local text = table.concat(lines, '\n')
-    assert.are.same('**0-9** (_>= 1x_)', text)
-  end)
-
-  it('explains character class escapes from interpreted string', function()
-    setup_go_buffer('package main\nimport "regexp"\nvar x, _ = regexp.Compile("\\\\d+")', 3, 30)
-    regexplainer.show()
-    local buffer = buffers.get_last_buffer()
-    assert.is_not_nil(buffer)
-    local lines = vim.api.nvim_buf_get_lines(buffer.bufnr, 0, -1, false)
-    local text = table.concat(lines, '\n')
-    assert.are.same('**0-9** (_>= 1x_)', text)
-  end)
-
-  it('detects regex in regexp.Compile', function()
-    setup_go_buffer('package main\nimport "regexp"\nvar x, _ = regexp.Compile(`\\d+`)', 3, 28)
-    assert.is_true(tree.has_regexp_at_cursor())
+  describe('narratives', function()
+    for result in LangUtils.iter_lang_fixtures('tests/fixtures/go.go', 'go') do
+      it(result.pattern_text, function()
+        LangUtils.assert_at_cursor(
+          'tests/fixtures/go.go', 'go',
+          result.row, result.col,
+          result.expected, 'go.go:' .. result.row)
+      end)
+    end
   end)
 end)
