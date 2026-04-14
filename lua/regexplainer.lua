@@ -1,20 +1,11 @@
-local component = require 'regexplainer.component'
-local tree = require 'regexplainer.utils.treesitter'
-local utils = require 'regexplainer.utils'
-local Buffers = require 'regexplainer.buffers'
-local cache = require 'regexplainer.cache'
-
-local get_node_text = vim.treesitter.get_node_text
 local deep_extend = vim.tbl_deep_extend
-local map = vim.tbl_map
-local buf_delete = vim.api.nvim_buf_delete
 local ag = vim.api.nvim_create_augroup
 local au = vim.api.nvim_create_autocmd
 
 ---@class RegexplainerOptions
 ---@field mode?             'narrative'|'debug'|'graphical'      # Renderer mode
 ---@field auto?             boolean                              # Automatically display when cursor enters a regexp
----@field filetypes?        string[]                             # Filetypes (extensions) to automatically show regexplainer.
+---@field filetypes?        string[]                             # Filetypes in which to run regexplainer.
 ---@field debug?            boolean                              # Notify debug logs
 ---@field display?          'split'|'popup'
 ---@field mappings?         RegexplainerMappings                 # keymappings to automatically bind.
@@ -55,28 +46,13 @@ local default_config = {
   auto = false,
   filetypes = {
     'html',
-    'js',
     'javascript',
-    'cjs',
-    'mjs',
-    'ts',
-    'typescript',
-    'cts',
-    'mts',
-    'tsx',
-    'typescriptreact',
-    'ctsx',
-    'mtsx',
-    'jsx',
     'javascriptreact',
-    'cjsx',
-    'mjsx',
-    'rb',
+    'typescript',
+    'typescriptreact',
     'ruby',
-    'py',
     'python',
     'go',
-    'rs',
     'rust',
     'php',
     'java',
@@ -118,9 +94,11 @@ local last_range = nil
 local function show_for_real(options)
   options = deep_extend('force', local_config, options or {})
 
+  local tree = require 'regexplainer.utils.treesitter'
   local original_node, err, processing = tree.get_regex_node_at_cursor()
 
   -- Early return if still on same regex (range-based check)
+  local Buffers = require 'regexplainer.buffers'
   if original_node and last_range and Buffers.is_open() then
     local start_row, start_col, end_row, end_col = original_node:range()
     if last_range[1] == start_row
@@ -145,6 +123,8 @@ local function show_for_real(options)
     last_range = nil
   end
 
+  local utils = require 'regexplainer.utils'
+
   if error and options.debug then
     utils.notify('Rexexplainer: ' .. error, 'debug')
   elseif node and scratchnr then
@@ -157,6 +137,7 @@ local function show_for_real(options)
       renderer = require 'regexplainer.renderers.narrative'
     end
 
+    local component = require 'regexplainer.component'
     local components = component.make_components(scratchnr, node, nil, node)
 
     local buffer = Buffers.get_buffer(options)
@@ -167,7 +148,7 @@ local function show_for_real(options)
 
     local start_row, start_col, end_row, end_col = original_node:range() ---@diagnostic disable-line: need-check-nil
     local state = {
-      full_regexp_text = get_node_text(node, scratchnr),
+      full_regexp_text = vim.treesitter.get_node_text(node, scratchnr),
       full_regexp_range = {
         start = { row = start_row, column = start_col },
         finish = { row = end_row, column = end_col },
@@ -175,7 +156,7 @@ local function show_for_real(options)
     }
 
     Buffers.render(buffer, renderer, components, options, state)
-    buf_delete(scratchnr, { force = true })
+    vim.api.nvim_buf_delete(scratchnr, { force = true })
   else
     Buffers.hide_all()
   end
@@ -193,6 +174,14 @@ function M.show(options)
   disable_auto = false
 end
 
+function M.show_split()
+  M.show { display = 'split' }
+end
+
+function M.show_popup()
+  M.show { display = 'popup' }
+end
+
 --- Yank the explainer for the regexp under the cursor into a given register
 ---@param options? string|RegexplainerRenderOptions
 function M.yank(options)
@@ -205,29 +194,23 @@ function M.yank(options)
   disable_auto = false
 end
 
---- Merge in the user config and setup key bindings
----@param config? RegexplainerOptions
----@return nil
---
-function M.setup(config)
-  local_config = deep_extend('keep', config or {}, default_config) --[[@as RegexplainerOptions]]
+--- Set up buffer-local keymaps and autocommands for the current buffer
+---@param bufnr number
+local function attach(bufnr)
+  local utils = require 'regexplainer.utils'
 
-  -- bind keys from config
   for cmdmap, binding in pairs(local_config.mappings) do
     local cmd, description = (unpack or table.unpack)(config_command_map[cmdmap])
     local command = ':' .. cmd .. '<CR>'
-    utils.map('n', binding, command, { desc = description })
+    utils.map('n', binding, command, { desc = description, buffer = bufnr })
   end
 
-  -- setup autocommand
   if local_config.auto then
-    ag(augroup_name, { clear = true })
     au('CursorMoved', {
-      group = 'Regexplainer',
-      pattern = map(function(x)
-        return '*.' .. x
-      end, local_config.filetypes),
+      group = augroup_name,
+      buffer = bufnr,
       callback = function()
+        local tree = require 'regexplainer.utils.treesitter'
         if tree.has_regexp_at_cursor() and not disable_auto then
           show_for_real()
         else
@@ -235,8 +218,34 @@ function M.setup(config)
         end
       end,
     })
-  else
-    pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
+  end
+end
+
+--- Merge in the user config and setup key bindings
+---@param config? RegexplainerOptions
+---@return nil
+--
+function M.setup(config)
+  local_config = deep_extend('keep', config or {}, default_config) --[[@as RegexplainerOptions]]
+
+  ag(augroup_name, { clear = true })
+
+  au('FileType', {
+    group = augroup_name,
+    pattern = local_config.filetypes,
+    callback = function(args)
+      attach(args.buf)
+    end,
+  })
+
+  -- Attach to any already-open buffers with matching filetypes
+  for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(bufnr) then
+      local ft = vim.bo[bufnr].filetype
+      if ft ~= '' and vim.tbl_contains(local_config.filetypes, ft) then
+        attach(bufnr)
+      end
+    end
   end
 end
 
@@ -244,13 +253,13 @@ end
 --
 function M.hide()
   last_range = nil
-  Buffers.hide_all()
+  require('regexplainer.buffers').hide_all()
 end
 
 --- Toggle Regexplainer
 --
 function M.toggle()
-  if Buffers.is_open() then
+  if require('regexplainer.buffers').is_open() then
     M.hide()
   else
     M.show()
@@ -262,7 +271,7 @@ end
 function M.teardown()
   local_config = vim.tbl_deep_extend('keep', {}, default_config)
   last_range = nil
-  Buffers.clear_timers()
+  pcall(function() require('regexplainer.buffers').clear_timers() end)
   pcall(vim.api.nvim_del_augroup_by_name, augroup_name)
 end
 
@@ -277,8 +286,8 @@ end
 --- Clear the image cache
 --
 function M.clear_cache()
-  cache.clear_cache()
-  utils.notify('Regexplainer image cache cleared', 'info')
+  require('regexplainer.cache').clear_cache()
+  require('regexplainer.utils').notify('Regexplainer image cache cleared', 'info')
 end
 
 return M

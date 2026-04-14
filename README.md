@@ -19,7 +19,10 @@ Heavily inspired by the venerable [atom-regexp-railroad][atom-regexp-railroad].
 ## 🚚 Installation
 
 ```lua
-vim.pack.add 'https://github.com/bennypowers/nvim-regexplainer'
+vim.pack.add {
+  'https://github.com/bennypowers/nvim-regexplainer',
+  'https://github.com/edluffy/hologram.nvim', // for graphical mode
+}
 ```
 
 ### Dependencies
@@ -27,8 +30,16 @@ vim.pack.add 'https://github.com/bennypowers/nvim-regexplainer'
 nvim-regexplainer requires the `regex` treesitter parser, as well as the
 parser for the host language.
 
-Supported languages: JavaScript, TypeScript, HTML, Ruby, Python, Go, Rust,
-PHP, Java, C#.
+Supported languages:
+- JavaScript (and TypeScript)
+- HTML
+- Ruby
+- Python
+- Go
+- Rust
+- PHP
+- Java
+- C#
 
 Run `:checkhealth regexplainer` to verify your treesitter setup.
 
@@ -43,23 +54,16 @@ require'regexplainer'.setup {
   -- automatically show the explainer when the cursor enters a regexp
   auto = false,
 
-  -- filetypes (i.e. extensions) in which to run the autocommand
+  -- filetypes in which to activate regexplainer
   filetypes = {
     'html',
-    'js',
-    'cjs',
-    'mjs',
-    'ts',
-    'jsx',
-    'tsx',
-    'cjsx',
-    'mjsx',
-    'rb',
+    'javascript',
+    'javascriptreact',
+    'typescript',
+    'typescriptreact',
     'ruby',
-    'py',
     'python',
     'go',
-    'rs',
     'rust',
     'php',
     'java',
