@@ -21,7 +21,7 @@ Heavily inspired by the venerable [atom-regexp-railroad][atom-regexp-railroad].
 ```lua
 vim.pack.add {
   'https://github.com/bennypowers/nvim-regexplainer',
-  'https://github.com/edluffy/hologram.nvim', // for graphical mode
+  'https://github.com/edluffy/hologram.nvim', -- for graphical mode
 }
 ```
 
