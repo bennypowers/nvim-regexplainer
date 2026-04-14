@@ -16,4 +16,5 @@ ts.install({
   'go',
   'rust',
   'php',
+  'java',
 }):wait(30000)

@@ -76,6 +76,7 @@ local default_config = {
     'go',
     'rust',
     'php',
+    'java',
   },
   debug = false,
   display = 'popup',
