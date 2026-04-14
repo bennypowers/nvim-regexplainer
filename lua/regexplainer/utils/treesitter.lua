@@ -60,12 +60,8 @@ function M.get_pattern(original_node)
 end
 
 function M.has_regexp_at_cursor()
-  for _, cap in ipairs(get_captures_at_cursor(0)) do
-    if cap == 'string.regexp' then
-      return true
-    end
-  end
-  return false
+  local node = M.get_regex_node_at_cursor()
+  return node ~= nil
 end
 
 ---Containers are regexp treesitter nodes which may contain leaf nodes like pattern_character.
