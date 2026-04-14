@@ -75,6 +75,7 @@ local default_config = {
     'python',
     'go',
     'rust',
+    'php',
   },
   debug = false,
   display = 'popup',
