@@ -34,14 +34,28 @@ local injection_samples = {
   { 'ruby', 'x = /hello/', 0, 5 },
 }
 
+--- Try to ensure a treesitter parser is available, installing if possible.
+---@param lang string
+---@return boolean
+local function ensure_parser(lang)
+  local ok = pcall(vim.treesitter.language.add, lang)
+  if ok then return true end
+  -- parser not installed, try to install it
+  vim.health.info(lang .. ': parser not found, attempting install...')
+  local install_ok, err = pcall(vim.treesitter.language.add, lang, { install = true })
+  if install_ok then
+    vim.health.ok(lang .. ': parser installed')
+    return true
+  end
+  vim.health.warn(lang .. ': could not install parser: ' .. tostring(err))
+  return false
+end
+
 M.check = function()
   vim.health.start('regexplainer: treesitter')
 
-  local parser_ok = pcall(vim.treesitter.language.add, 'regex')
-  if parser_ok then
-    vim.health.ok('regex parser is installed')
-  else
-    vim.health.error('regex parser is not installed', {
+  if not ensure_parser('regex') then
+    vim.health.error('regex parser is required', {
       'Install the regex parser for treesitter',
     })
   end
@@ -49,9 +63,8 @@ M.check = function()
   for _, sample in ipairs(injection_samples) do
     local filetype, source, row, col = sample[1], sample[2], sample[3], sample[4]
 
-    local lang_ok = pcall(vim.treesitter.language.add, filetype)
-    if not lang_ok then
-      vim.health.warn(filetype .. ': parser not installed (skipped)')
+    if not ensure_parser(filetype) then
+      vim.health.warn(filetype .. ': parser not available (skipped)')
     else
       if test_regex_injection(filetype, source, row, col) then
         vim.health.ok(filetype .. ': regex injection working')
@@ -76,9 +89,8 @@ M.check = function()
   for _, entry in ipairs(query_langs) do
     local parser_lang, filetype = entry[1], entry[2]
 
-    local lang_ok = pcall(vim.treesitter.language.add, parser_lang)
-    if not lang_ok then
-      vim.health.info(filetype .. ': parser not installed (skipped)')
+    if not ensure_parser(parser_lang) then
+      vim.health.info(filetype .. ': parser not available (skipped)')
     else
       local query = vim.treesitter.query.get(parser_lang, 'regexplainer')
       if query then
