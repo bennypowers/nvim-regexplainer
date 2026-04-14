@@ -18,7 +18,7 @@ local function cleanup_hologram_image()
 end
 
 local popup_defaults = {
-  position = 2,
+  position = 1,
   relative = 'cursor',
   size = 1,
   border = {

@@ -32,9 +32,13 @@ function SplitWin.new(opts)
   self._ = { mounted = false }
   self.bufnr = vim.api.nvim_create_buf(false, true)
 
+  -- Apply buf_options except readonly/modifiable, which are deferred
+  -- until after content is written (see after callback)
   if opts.buf_options then
     for k, v in pairs(opts.buf_options) do
-      pcall(function() vim.bo[self.bufnr][k] = v end)
+      if k ~= 'readonly' and k ~= 'modifiable' then
+        pcall(function() vim.bo[self.bufnr][k] = v end)
+      end
     end
   end
 
@@ -102,6 +106,11 @@ function SplitWin:hide()
 end
 
 local function after(self, lines, options, state)
+  -- Lock down buffer now that content has been written
+  local buf_opts = self._opts.buf_options or {}
+  if buf_opts.readonly then vim.bo[self.bufnr].readonly = true end
+  if buf_opts.modifiable == false then vim.bo[self.bufnr].modifiable = false end
+
   -- Set flag to prevent cursor exit detection until setup is complete
   self._setup_complete = false
   set_current_win(state.last.parent.winnr)
