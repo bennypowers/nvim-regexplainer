@@ -25,7 +25,9 @@ vim.pack.add 'https://github.com/bennypowers/nvim-regexplainer'
 ### Dependencies
 
 nvim-regexplainer requires the `regex` treesitter parser, as well as the
-parser for the host language (javascript, typescript, html).
+parser for the host language.
+
+Supported languages: JavaScript, TypeScript, HTML, Ruby.
 
 Run `:checkhealth regexplainer` to verify your treesitter setup.
 
@@ -51,6 +53,7 @@ require'regexplainer'.setup {
     'tsx',
     'cjsx',
     'mjsx',
+    'ruby',
   },
 
   -- Whether to log debug messages

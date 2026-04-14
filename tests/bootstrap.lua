@@ -11,4 +11,5 @@ ts.install({
   'javascript',
   'typescript',
   'regex',
-}):wait(10000)
+  'ruby',
+}):wait(30000)

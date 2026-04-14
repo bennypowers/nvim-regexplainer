@@ -31,6 +31,7 @@ local injection_samples = {
   { 'javascript', 'const x = /hello/', 0, 12 },
   { 'typescript', 'const x = /hello/', 0, 12 },
   { 'html', '<script>\nconst x = /hello/\n</script>', 1, 12 },
+  { 'ruby', 'x = /hello/', 0, 5 },
 }
 
 M.check = function()

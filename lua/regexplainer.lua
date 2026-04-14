@@ -71,6 +71,7 @@ local default_config = {
     'javascriptreact',
     'cjsx',
     'mjsx',
+    'ruby',
   },
   debug = false,
   display = 'popup',
@@ -108,7 +109,7 @@ local last_range = nil
 local function show_for_real(options)
   options = deep_extend('force', local_config, options or {})
 
-  local original_node, err = tree.get_regex_node_at_cursor()
+  local original_node, err, processing = tree.get_regex_node_at_cursor()
 
   -- Early return if still on same regex (range-based check)
   if original_node and last_range and Buffers.is_open() then
@@ -127,7 +128,7 @@ local function show_for_real(options)
 
   local node, scratchnr, error
   if original_node then
-    node, scratchnr, error = tree.get_pattern(original_node)
+    node, scratchnr, error = tree.get_pattern(original_node, processing)
     local start_row, start_col, end_row, end_col = original_node:range()
     last_range = { start_row, start_col, end_row, end_col }
   else
