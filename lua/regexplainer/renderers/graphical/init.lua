@@ -196,10 +196,12 @@ function M.get_lines(components, options, state)
   local cell_width = hologram_state.cell_size.x -- pixels per character width
   local cell_height = hologram_state.cell_size.y -- pixels per character height
 
-  -- Calculate window constraints
-  local current_win_width = vim.api.nvim_win_get_width(vim.api.nvim_get_current_win())
-  local current_win_height = vim.api.nvim_win_get_height(vim.api.nvim_get_current_win())
-  local max_popup_char_width = math.floor(current_win_width * 0.9) -- 90% of window width
+  -- Calculate window constraints, accounting for cursor position
+  local current_win = vim.api.nvim_get_current_win()
+  local current_win_width = vim.api.nvim_win_get_width(current_win)
+  local current_win_height = vim.api.nvim_win_get_height(current_win)
+  local cursor_col = vim.api.nvim_win_get_cursor(current_win)[2]
+  local max_popup_char_width = current_win_width - cursor_col
   local max_popup_char_height = math.floor(current_win_height * 0.7) -- 70% of window height
 
   -- Convert character constraints to effective pixel constraints

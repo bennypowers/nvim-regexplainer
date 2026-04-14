@@ -158,14 +158,18 @@ local function init(self, lines, _, state)
   local width = 0
   local height = #lines
 
+  -- Available width from cursor to right edge of window
+  local cursor_col = vim.api.nvim_win_get_cursor(0)[2]
+  local max_width = win_width - cursor_col
+
   -- Check if we have image dimensions (for graphical mode)
   if state.image_char_width and state.image_char_height then
     -- Use image dimensions for popup sizing
     width = state.image_char_width
     height = state.image_char_height
 
-    -- Ensure minimum size and respect window limits
-    width = math.max(30, math.min(width, math.floor(win_width * 0.9)))
+    -- Ensure minimum size and never exceed available space
+    width = math.max(30, math.min(width, max_width))
     height = math.max(5, math.min(height, 40))
   else
     -- Traditional text-based sizing
@@ -175,8 +179,8 @@ local function init(self, lines, _, state)
       end
     end
 
-    if (win_width * 0.75) < width then
-      width = '75%'
+    if width > max_width then
+      width = max_width
     end
   end
 
